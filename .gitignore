@@ -1,0 +1,7 @@
+venv/
+myproject.egg-info/
+main2.py
+main.spec
+dist/
+build/
+*.pyc
