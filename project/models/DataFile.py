@@ -25,6 +25,7 @@ class OutputData:
 
 
 
+
 class Muestra1:
     def __init__(self, UExp , IExp, UExppos, IExppos, velocidad) -> None:
         fig, axs = plt.subplots(1,1, dpi = 80, figsize= (10,10))
@@ -89,20 +90,24 @@ class DataFile(ABC):
 
 
 
-class SimpleCSV(DataFile, _ISetState):
+class SimpleCSV(DataFile):
+    """
+    Modelo 1 
+    """
     def __init__(self, path: str, data: dict, velocidad: float) -> None:
         super().__init__(path)
         #Datos iniciales y principales
         self.path = path
         self.data = data
         self.csv = np.loadtxt( self.path )
-        self.DivWin = int(data['ventana'])          
+        self.DivWin = int(data['ventana'])    
+        self.areasup = int(data['areasup'])      
         self.velocidad = velocidad
         self.velocidadE = velocidad/10000
         self.UKpos = self.velocidadE **0.5 
         self.UKneg = self.velocidadE **0.5 
         self.DLC = data['DLC']
-
+        self.cteact = (data['pesomol']/(data['electrones']*96500*data['densidad']))
         #StepOne data
         self.UExp = self.csv[:,0]
         self.IExp = self.csv[:,1]
@@ -156,10 +161,13 @@ class SimpleCSV(DataFile, _ISetState):
         self.Qt: list[float] = []
 
         #Step Seven
-        self.Qdpos = []
+        self.Qdpos: list[float] = 0
+        self.Qdneg: list[float] = 0
+        self.insert: list[float] = []
+        self.inserneg: list[float] = []
         self.masaneg: list[float] = []
         self.masapos: list[float] = []
-
+        self.pandasdt: pd.DataFrame = None
 
     def get_csv(self) -> np.ndarray:
         """
@@ -265,6 +273,22 @@ class SimpleCSV(DataFile, _ISetState):
         for i in range(len(self.p)):
             self.KIdentifpos.append( self.p[i][0] )
             self.KIdentifneg.append( self.q[i][0] )
+    
+    def insertograma(self):
+        self.Qdpos = 0
+        self.Qdneg = 0
+        masalec = 0.0016*0.7
+
+        for i in range(len(self.Imodelpos_1)):
+            self.Qdpos = (self.Qdpos + ((self.Imodelpos_2[i]* self.difV)/self.velocidadE)) # A/g*s
+            self.Qdneg = (self.Qdneg + ((self.Imodelneg_2[i]* self.difV)/self.velocidadE))# A/g*s
+            self.insert.append( self.cteact * ((self.Qd[i]/self.areasup)/10000) *1E+7 )
+            self.inserneg.append( self.cteact * (self.Qdneg/self.areasup) )
+
+        fig, ax = plt.subplots(1,1)
+        ax.plot(self.linspace_varr[0][0:len(self.linspace_varr[0])-1], self.inserneg)
+        ax.plot(self.linspace_varr[0][0:len(self.linspace_varr[0])-1], self.insert, 'b')
+        return fig
 
     def bars(self) -> Barras:
         """
@@ -272,16 +296,16 @@ class SimpleCSV(DataFile, _ISetState):
         """
         for i in range(len(self.Imodelneg)):
             self.barras.append( [ ((self.Qc[i])-(self.DLC/self.DivWin)), (self.Qd[i]), (self.DLC/self.DivWin) ] )
-        pandasdt = pd.DataFrame(self.barras,  columns = [ 'Capacitiva','Difusiva','Doble layer' ])
+        self.pandasdt = pd.DataFrame(self.barras,  columns = [ 'Capacitiva','Difusiva','Doble layer' ])
         
-        b = Barras(pandasdt=pandasdt, barras = self.barras)
+        b = Barras(pandasdt=self.pandasdt, barras = self.barras)
         return b.canvas
     
     def porcentaje(self):
         """
         Genera las graficas de porcentaje de las corrientes.
         """
-        
+
         p = Porcentaje(pd.DataFrame(self.barras,  columns = [ 'Capacitiva','Difusiva','Doble layer' ]) )
         return p.canvas
     

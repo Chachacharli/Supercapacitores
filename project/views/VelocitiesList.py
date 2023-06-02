@@ -7,6 +7,9 @@ class ListOfSomething(ABC):
           pass
 
 class InputSpeed:
+    """
+    Componente que renderiza y devuelve los inputs de las velocidades de los archivos seleccionados.
+    """
     def __init__(self,master: any, name: str, path: str) -> None:
             self.variable = tk.StringVar()
             self.variable.set(None) 

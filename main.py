@@ -80,7 +80,7 @@ def set_variables_modelo1(diccionary_of_variables: dict) -> list:
 
         return bubble
  
-def set_velocities(velocities: list) -> None:
+def set_velocities() -> None:
         """
         Renderiza las entries para introdicir las velocidades.
         """
@@ -131,6 +131,11 @@ def inizialize_window(root: customtkinter.CTk) -> None:
 
 #TOMAR LAS VARIABLES DEPENDIENDO DEL MODELO
 def get_variables_modelo1()->list:
+
+    """
+    Tomar las varables de cada una de los inputs.
+    """
+
     global list_of_velocities
     
 
@@ -156,7 +161,7 @@ def get_variables_modelo1()->list:
 
     
     #Start controller Step One
-    interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, outputs = StepOne(data_objects)   
+    interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs = StepOne(data_objects)   
     
     
     #Quitar imagen
@@ -190,6 +195,14 @@ def get_variables_modelo1()->list:
     navbar_tool_bar2.update()
     navbar_tool_bar2.pack(fill='both' )  
 
+    bars_canvas = FigureCanvasTkAgg(bars, content4.interior)
+    bars_canvas.draw()
+    bars_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
+    navbar_tool_bar = NavigationToolbar2Tk(bars_canvas, content4.interior, pack_toolbar=False)
+    navbar_tool_bar.update()
+    navbar_tool_bar.pack(fill='both' )      
+
+
     #Este for se encarga de plotear y renderizar las graficas en las diferentes ramas del arbol 
     for i in range(len(interpolacion)):
         canvas = FigureCanvasTkAgg(interpolacion[i], main_container.interior)
@@ -205,14 +218,7 @@ def get_variables_modelo1()->list:
         navbar_tool_bar = NavigationToolbar2Tk(corriente_canvas, content3.interior, pack_toolbar=False)
         navbar_tool_bar.update()
         navbar_tool_bar.pack(fill='both' )
-
-        bars_canvas = FigureCanvasTkAgg(bars[i], content4.interior)
-        bars_canvas.draw()
-        bars_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
-        navbar_tool_bar = NavigationToolbar2Tk(bars_canvas, content4.interior, pack_toolbar=False)
-        navbar_tool_bar.update()
-        navbar_tool_bar.pack(fill='both' )        
-
+  
         porcentaje_canvas = FigureCanvasTkAgg(porcentaje[i], content5.interior)
         porcentaje_canvas.draw()
         porcentaje_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
@@ -227,12 +233,19 @@ def get_variables_modelo1()->list:
         masograna_canvas.update()
         masograna_canvas.pack(fill='both' )          
 
+        insertograma_canvas = FigureCanvasTkAgg(insertograma[i], content7.interior)
+        insertograma_canvas.draw()
+        insertograma_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
+        insertograma_canvas = NavigationToolbar2Tk(insertograma_canvas, content7.interior, pack_toolbar=False)
+        insertograma_canvas.update()
+        insertograma_canvas.pack(fill='both' ) 
 
 modelo1_variables = {
     "pesomol": "g/mol",
     "densidad": "g/m3",
     "areasup": "m^2/g",
     "ventana": "int",
+    "electrones": "int",
     "DLC": "int"
 }
 
@@ -242,6 +255,7 @@ modelo1_respuestas = {
     "areasup": " ",
     "ventana": " ",
     "DLC": " ",
+    "electrones": "",
     "velocidades": []
 }
 
@@ -309,6 +323,8 @@ if __name__ == '__main__':
     TabTree.add('Muestras 4')
     TabTree.add('Muestras 5')
     TabTree.add('Muestras 6')
+    TabTree.add('Muestras 7')
+
 
     #TREE PARA CAMBIAR DE PESTANA
 
@@ -334,6 +350,9 @@ if __name__ == '__main__':
 
     content6 = VerticalScrolledFrame( TabTree.tab('Muestras 6'))
     content6.pack(fill=BOTH, expand=True)        
+
+    content7 = VerticalScrolledFrame( TabTree.tab('Muestras 7'))
+    content7.pack(fill=BOTH, expand=True)          
 
     #Inputs
     selectable_files = customtkinter.CTkFrame( aside , fg_color='#CFCFCF' , bg_color='#CFCFCF')
