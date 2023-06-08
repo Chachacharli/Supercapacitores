@@ -80,7 +80,7 @@ class Masograma:
         self.canvas = fig        
         
     
-class DataFile(ABC): 
+class IDataFile(ABC): 
     #En el inicializador solo se le proporciona su path para posteriormente manejar este atributo
     #El estado de la clase inicial es true, este estado cambiara en base a si se cumplen todos los parametros para que continue la cadena de codidgo,
     #si esta cadena se rompe, el estado cambiara a False y retornaremos un fallo para la GUI
@@ -90,7 +90,7 @@ class DataFile(ABC):
 
 
 
-class SimpleCSV(DataFile):
+class SimpleCSV(IDataFile):
     """
     Modelo 1 
     """

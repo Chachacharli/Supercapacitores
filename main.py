@@ -1,22 +1,75 @@
+#Librerias
 import tkinter as tk
 from tkinter import StringVar
 import customtkinter
 import tkinter.filedialog as fd
 import tkinter as tk
 import tkinter.ttk as ttk
+import numpy as np
+from PIL import Image
+import os
+import sys
+
+#constantes
+import project.utils.contstans as CONST
 from tkinter.constants import *
+
+#Classes
 from project.models.DataFile import SimpleCSV
 from project.views.MainInput import MainInput
 from project.views.VelocitiesList import VelocitiesList
 from project.views.FrameOptionsOutputs import FrameOptionsOutputs
 from project.views.VerticalScrolledFrame import VerticalScrolledFrame
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from PIL import Image
-import os
-import sys
+
+from abc import ABC
+
+
+def render_form(formulario):
+    print(f'Este es el formulario : {formulario}')
+    pass
+
+class ModelosInputs(ABC):
+    def __init__(self, master: tk.Frame, dict_var: dict) -> None:
+        self.master = master
+        self.dict_var = dict_var
+        
+    def set_variables(self):
+        bubble = []
+        for i,( k, v) in enumerate(self.dict_var.items()):
+            bubble.append(StringVar(name=k))
+        return bubble        
+    
+    @property
+    def set_dict(self):
+         return self.dict_var
+    
+    @set_dict.setter
+    def set_dict(self, nvalue: dict):
+         self.dict_var =  nvalue
+
+
+
+class ModeloUnoAreaActiva(ModelosInputs):
+    def __init__(self, master: tk.Frame, dict_var: dict) -> None:
+        super().__init__(master, dict_var)
+        self.lista_variables_asig = self.set_variables()
+        for i,( c, v) in enumerate(modelo1_variables.items()):
+            MainInput(master,i, c, v, self.lista_variables_asig[i])
+                 
+        
+class ModeloUnoMasaActiva(ModelosInputs):
+    def __init__(self, master: tk.Frame, dict_var: dict) -> None:
+        super().__init__(master, dict_var)
+        self.lista_variables_asig = set_variables_modelo1(modelo1_variables2)
+        for i,( c, v) in enumerate(modelo1_variables2.items()):
+            MainInput(master,i, c, v, self.lista_variables_asig[i])         
+                 
+
+
+
 #CONTROLLERS
 from project.controllers.GetDataFromGUI import get_data_from_GUI, StepOne
-import numpy as np
 list_of_velocities: list = []
 
 def resource_path(relative_path):
@@ -46,7 +99,6 @@ def save_data(name: str, obj: SimpleCSV,number: int):
         "Muestra4": [obj.barras[0], obj.barras[1], obj.barras[2]],
         "Muestra5": [obj.masapos, obj.masaneg],
         "Modelos": [obj.Imodelpos, obj.Imodelpos_1, obj.Imodelpos_2, obj.Imodelneg, obj.Imodelneg_1, obj.Imodelneg_2]
-
     }
 
     np.savetxt(f'{name}_{obj.velocidad}.txt', np.transpose(data[name]))
@@ -143,11 +195,14 @@ def get_variables_modelo1()->list:
     
     for i, (k,v) in enumerate(modelo1_variables.items()):
        try: 
+            print(f'{i} {float(lista_variables_asig[i].get())}')
             modelo1_respuestas[k] = (float(lista_variables_asig[i].get()))    
 
        except Exception as e:
             print('Algo malolo sucedio')
             print(f'Error: {e}')
+
+    print(modelo1_respuestas)
 
     for i in range(len(list_of_velocities)):
         try:
@@ -240,14 +295,25 @@ def get_variables_modelo1()->list:
         insertograma_canvas.update()
         insertograma_canvas.pack(fill='both' ) 
 
+
+
+modelo1_variables2= {
+    "pesomol": "g/mol",
+    "densidad": "g/m3",
+    "ventana": "int",
+    "electrones": "int",
+    "DLC": "int"
+}
+
 modelo1_variables = {
     "pesomol": "g/mol",
     "densidad": "g/m3",
     "areasup": "m^2/g",
     "ventana": "int",
-    "electrones": "int",
-    "DLC": "int"
+    "DLC": "int",
+    "electrones": "int"
 }
+
 
 modelo1_respuestas = {
     "pesomol": " ",
@@ -332,7 +398,6 @@ if __name__ == '__main__':
     main_container.pack(fill=BOTH, expand=True)
 
 
-
     conntent2 = VerticalScrolledFrame( TabTree.tab('Muestras 2'))
     conntent2.pack(fill=BOTH, expand=True)
 
@@ -376,10 +441,22 @@ if __name__ == '__main__':
     navigation_frame.grid_rowconfigure(10, weight=1)
         
     #Inputs 
-    lista_variables_asig = set_variables_modelo1(modelo1_variables)
-    for i,( c, v) in enumerate(modelo1_variables.items()):
-        MainInput(navigation_frame,i, c, v, lista_variables_asig[i])
-            
+
+    ##Tipo de datos y normalzacion
+    
+    introduccion_dato = StringVar(value='Opcion1')
+
+    input_1 = customtkinter.CTkRadioButton(navigation_frame, text='Opcion1', variable=introduccion_dato, value="Opcion1", command= lambda: print(introduccion_dato.get()))
+    input_1.grid( row=0, column=0, padx=10  )
+
+    input_2 = customtkinter.CTkRadioButton(navigation_frame, text='Opcion2', variable=introduccion_dato, value="Opcion2", command= lambda: print(introduccion_dato.get()))
+    input_2.grid( row=0, column=1, padx=10  )
+    
+    
+    modelo = ModeloUnoAreaActiva(navigation_frame, modelo1_variables)
+    lista_variables_asig = modelo.lista_variables_asig
+
+
     btn_next = customtkinter.CTkButton(navigation_frame,text='Continue', 
                                            command=(get_variables_modelo1), fg_color='#2ECC71')
     btn_next.grid()
