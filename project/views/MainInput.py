@@ -1,7 +1,5 @@
 import customtkinter
 
-
-
 class MainInput:
     def __init__(self,master: customtkinter.CTkFrame, row: int , header: str, placeholder: str, unit_variables_asig: any) -> None:
     

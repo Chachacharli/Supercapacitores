@@ -9,459 +9,371 @@ import numpy as np
 from PIL import Image
 import os
 import sys
+from dataclasses import dataclass
 
 #constantes
 import project.utils.contstans as CONST
 from tkinter.constants import *
 
 #Classes
+
+## MODELOS
 from project.models.DataFile import SimpleCSV
+
+## DATACLASSES
+from project.models.DataClasses import EntradaModelo1
+
+## VIEWS
 from project.views.MainInput import MainInput
-from project.views.VelocitiesList import VelocitiesList
+from project.views.VelocitiesList import VelocitiesList, InputSpeed
 from project.views.FrameOptionsOutputs import FrameOptionsOutputs
 from project.views.VerticalScrolledFrame import VerticalScrolledFrame
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
-from abc import ABC
+## INTERFACES 
+from project.interfaces.IModelosInputs import IModelosInputs
+
+from project.utils.split_str import split_str
+
+#Controllers
+from project.controllers.ControllerModelo1 import ControllerModelo1
 
 
-def render_form(formulario):
-    print(f'Este es el formulario : {formulario}')
-    pass
 
-class ModelosInputs(ABC):
-    def __init__(self, master: tk.Frame, dict_var: dict) -> None:
+class ModeloUnoFormulario(IModelosInputs):
+    def __init__(self, master, id, diccionario):
+        super().__init__(diccionario)
+        self.id = id
+        self.frame = customtkinter.CTkFrame(master=master, fg_color='#CFCFCF')
+        self.lista_variables_asig = self.set_variables()    
+        self.list_inputs: list[MainInput] = list()
+        self.crear_widgets()
+
+    def crear_widgets(self):
+        self.etiqueta = customtkinter.CTkLabel(self.frame)
+        for i,( c, v) in enumerate(self.dict_var.items()):
+            self.list_inputs.append(MainInput(self.frame,i, c, v, self.lista_variables_asig[i]))         
+        self.etiqueta.grid()
+
+    def return_data_inputs(self):
+        lista_data = list()
+        for i in range(len(self.list_inputs)):
+            lista_data.append(float(self.list_inputs[i].entrie_din.get()))
+
+        return lista_data
+
+class NavigationFrameModelo1:
+    def __init__(self, master) -> None:
+        
         self.master = master
-        self.dict_var = dict_var
+
+        self.dict_modelo_masa_activa = CONST.modelo1_masa_activa
+        self.dict_modelo_area_activa = CONST.modelo1_area_activa
+
+        self.navigation_frame = customtkinter.CTkFrame(self.master, corner_radius=0,  fg_color='#CFCFCF')
+        self.navigation_frame.grid_rowconfigure(10, weight=1)
+        self.navigation_frame.grid(row=3, column=0, sticky="nsew",  columnspan=4, padx=5)
+
+        self.introduccion_dato = StringVar(value='')
+        self.formulario_actual: ModeloUnoFormulario = None
+
+        self.input_1 = customtkinter.CTkRadioButton(self.navigation_frame, text='Masa Activa', 
+                                            variable=self.introduccion_dato, 
+                                            value="Opcion1",
+                                            command=lambda: self.render_form(self.introduccion_dato.get()))
         
-    def set_variables(self):
-        bubble = []
-        for i,( k, v) in enumerate(self.dict_var.items()):
-            bubble.append(StringVar(name=k))
-        return bubble        
-    
-    @property
-    def set_dict(self):
-         return self.dict_var
-    
-    @set_dict.setter
-    def set_dict(self, nvalue: dict):
-         self.dict_var =  nvalue
+        self.input_1.grid( row=0, column=0, padx=10, pady=10  )
 
-
-
-class ModeloUnoAreaActiva(ModelosInputs):
-    def __init__(self, master: tk.Frame, dict_var: dict) -> None:
-        super().__init__(master, dict_var)
-        self.lista_variables_asig = self.set_variables()
-        for i,( c, v) in enumerate(modelo1_variables.items()):
-            MainInput(master,i, c, v, self.lista_variables_asig[i])
-                 
+        self.input_2 = customtkinter.CTkRadioButton(self.navigation_frame, text='Area Activa', 
+                                            variable=self.introduccion_dato, 
+                                            value="Opcion2", 
+                                            command= lambda: self.render_form(self.introduccion_dato.get()))
         
-class ModeloUnoMasaActiva(ModelosInputs):
-    def __init__(self, master: tk.Frame, dict_var: dict) -> None:
-        super().__init__(master, dict_var)
-        self.lista_variables_asig = set_variables_modelo1(modelo1_variables2)
-        for i,( c, v) in enumerate(modelo1_variables2.items()):
-            MainInput(master,i, c, v, self.lista_variables_asig[i])         
-                 
+        self.input_2.grid( row=0, column=1, padx=10, pady=10  )
 
 
+    def render_form(self, into: dict):
 
-#CONTROLLERS
-from project.controllers.GetDataFromGUI import get_data_from_GUI, StepOne
-list_of_velocities: list = []
+        if self.formulario_actual is not None:
+            self.formulario_actual.frame.grid_forget()
 
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-Logo = resource_path("Logo.png")
-
-
-def save_data(name: str, obj: SimpleCSV,number: int):
-    """
-    Guarda los datos que se procesaron dependiendo de los parametros recibidos.
-    :param name: Nombre de salida del archivo
-    :param obj: Clase del que se sacaran los datos
-    """
-
-    data = {
-        "Muestra1": [obj.UExppos, obj.IExppos],
-        "Muestra2": [obj.IKpos, obj.IKneg],
-        "Muestra3": [obj.p[0], obj.q[0]],
-        "Muestra4": [obj.barras[0], obj.barras[1], obj.barras[2]],
-        "Muestra5": [obj.masapos, obj.masaneg],
-        "Modelos": [obj.Imodelpos, obj.Imodelpos_1, obj.Imodelpos_2, obj.Imodelneg, obj.Imodelneg_1, obj.Imodelneg_2]
-    }
-
-    np.savetxt(f'{name}_{obj.velocidad}.txt', np.transpose(data[name]))
-    
-
-def split_str(files: list, position: int) -> list:
-        """
-        Toma la dirección de proporcionada y devuelve solo el nombre y la extención del archivo
-
-        :param files: lista de direcciones de los archivos.
-        :param position: Numero de posicion del input asociado.
-
-        """
-        bubble = []
-        for i in range(len(files[0])):
-            x = files[0][i].split('/')
-            bubble.append(x[position]) 
-        return bubble
+        if(into == 'Opcion1'):
+            self.formulario_actual = ModeloUnoFormulario(self.master,1, self.dict_modelo_masa_activa )
+        else:         
+            self.formulario_actual = ModeloUnoFormulario(self.master,2, self.dict_modelo_area_activa )
         
-def set_variables_modelo1(diccionary_of_variables: dict) -> list:
-        """ 
-        Esta funcion genera la cantidad de variables de punto flotante respecto a la 
-        cantidad de keys de un diccionario dado.
+        self.formulario_actual.frame.grid(row=2, column=0)        
+         
+    def get_data_from_form(self):
+        print(self.formulario_actual.return_data_inputs())
 
-        diccionary_of_variables: Diccionario con todos los datos introducidos.
-        """
+class Aside:
+    def __init__(self, root) -> None:
+        self.root = root
 
-        bubble = []
-        for i,( k, v) in enumerate(diccionary_of_variables.items()):
-            bubble.append(StringVar(name=k))
+        self.aside = customtkinter.CTkFrame(self.root, width=100, fg_color='#CFCFCF', border_color='#1D3F60', border_width=3)
+        self.aside.grid_columnconfigure((0,1,2), weight=1)
+        self.aside.grid_rowconfigure(0, weight=0)
+        self.aside.grid( row=1, column=1, rowspan=10, sticky= 'nswe' )
 
-        return bubble
- 
-def set_velocities() -> None:
-        """
-        Renderiza las entries para introdicir las velocidades.
-        """
-        label_vels = customtkinter.CTkScrollbar(aside, corner_radius=0, height=200)
-        label_vels.grid( row=1, column=0, columnspan=4, sticky= 'nswe', pady=10 )
-        label = customtkinter.CTkButton(label_vels,text='llal')
-        label.pack()
-        text = customtkinter.CTkTextbox(label_vels,height=500)
-        text.pack()
-
-def select_files() -> None:
-        
-        """
-        Funcion que abre una ventana emergente para poder seleccionar los archivos. 
-        """
-
-        global list_of_velocities
-
-        files = []
-        filez = fd.askopenfilenames(parent=root, title='Choose a file', filetypes=(('text files', 'txt'),))
-        files.append(filez) 
-        files = split_str(files, -1)
-        see.clipboard_clear()
-        for i in range(len(files)):
-            see.insert(0, (files[i]))
-        vel_var = VelocitiesList(aside, files, filez, 10)  
-        vel_var.render_list()
-        list_of_velocities = vel_var.get_list()
-        
-def clear_files() -> None:
-        """
-        Elimina las entries del Frame.
-        """
-        files = []
-        see.clipboard_clear()
-        VelocitiesList(aside, files,[], 10)
-
-def full_screen() -> None:
-        root.attributes('-fullscreen',False)
-
-def inizialize_window(root: customtkinter.CTk) -> None:
-        root.title( 'SuperCapacitoresSoftware' )
-        width= root.winfo_screenwidth()
-        height= root.winfo_screenheight()    
-        root.minsize( width= width, height= height)
-        root.state('zoomed')
-
-
-#TOMAR LAS VARIABLES DEPENDIENDO DEL MODELO
-def get_variables_modelo1()->list:
-
-    """
-    Tomar las varables de cada una de los inputs.
-    """
-
-    global list_of_velocities
-    
-
-    lista_de_velocidades: list[int] = []
-    
-    for i, (k,v) in enumerate(modelo1_variables.items()):
-       try: 
-            print(f'{i} {float(lista_variables_asig[i].get())}')
-            modelo1_respuestas[k] = (float(lista_variables_asig[i].get()))    
-
-       except Exception as e:
-            print('Algo malolo sucedio')
-            print(f'Error: {e}')
-
-    print(modelo1_respuestas)
-
-    for i in range(len(list_of_velocities)):
-        try:
-            lista_de_velocidades.append(float(list_of_velocities[i].return_info()))
-        except Exception as e:
-            print(e)
-
-    modelo1_respuestas["velocidades"] = lista_de_velocidades
-
-    data_objects = get_data_from_GUI(entries= len(list_of_velocities), paths= list_of_velocities, data= modelo1_respuestas)
-
-    
-    #Start controller Step One
-    interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs = StepOne(data_objects)   
-    
-    
-    #Quitar imagen
-    TabTree.configure(state='Activate')
-
-    print('FORMAT')
-
-    if(frame_option.format.Muestra1 or frame_option.format.Muestra2 
-       or frame_option.format.Muestra3 or frame_option.format.Muestra4 
-       or frame_option.format.Muestra5):
-        
-        for i in range(len(data_objects)):
-            if(frame_option.format.Muestra1):
-                save_data('Muestra1', data_objects[i], i)
-            if(frame_option.format.Muestra2):
-                save_data('Muestra2', data_objects[i], i)
-            if(frame_option.format.Muestra3):
-                save_data('Muestra3', data_objects[i], i)
-            if(frame_option.format.Muestra4):
-                save_data('Muestra4', data_objects[i], i)   
-            if(frame_option.format.Muestra5):
-                save_data('Muestra5', data_objects[i], i)
-
-
-    #Renderizar grafica de oxidacion
-    canvasOxidacion = FigureCanvasTkAgg(oxidacion, conntent2.interior)
-    canvasOxidacion.draw()
-    canvasOxidacion.get_tk_widget().pack(fill='both', pady=20, padx=20)
-
-    navbar_tool_bar2 = NavigationToolbar2Tk(canvasOxidacion, conntent2.interior, pack_toolbar=False)
-    navbar_tool_bar2.update()
-    navbar_tool_bar2.pack(fill='both' )  
-
-    bars_canvas = FigureCanvasTkAgg(bars, content4.interior)
-    bars_canvas.draw()
-    bars_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
-    navbar_tool_bar = NavigationToolbar2Tk(bars_canvas, content4.interior, pack_toolbar=False)
-    navbar_tool_bar.update()
-    navbar_tool_bar.pack(fill='both' )      
-
-
-    #Este for se encarga de plotear y renderizar las graficas en las diferentes ramas del arbol 
-    for i in range(len(interpolacion)):
-        canvas = FigureCanvasTkAgg(interpolacion[i], main_container.interior)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
-        navbar_tool_bar = NavigationToolbar2Tk(canvas, main_container.interior, pack_toolbar=False)
-        navbar_tool_bar.update()
-        navbar_tool_bar.pack(fill='both' )
-
-        corriente_canvas = FigureCanvasTkAgg(corriente_total[i], content3.interior)
-        corriente_canvas.draw()
-        corriente_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
-        navbar_tool_bar = NavigationToolbar2Tk(corriente_canvas, content3.interior, pack_toolbar=False)
-        navbar_tool_bar.update()
-        navbar_tool_bar.pack(fill='both' )
-  
-        porcentaje_canvas = FigureCanvasTkAgg(porcentaje[i], content5.interior)
-        porcentaje_canvas.draw()
-        porcentaje_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
-        porcentaje_canvas = NavigationToolbar2Tk(porcentaje_canvas, content5.interior, pack_toolbar=False)
-        porcentaje_canvas.update()
-        porcentaje_canvas.pack(fill='both' )              
-
-        masograna_canvas = FigureCanvasTkAgg(masograma[i], content6.interior)
-        masograna_canvas.draw()
-        masograna_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
-        masograna_canvas = NavigationToolbar2Tk(masograna_canvas, content6.interior, pack_toolbar=False)
-        masograna_canvas.update()
-        masograna_canvas.pack(fill='both' )          
-
-        insertograma_canvas = FigureCanvasTkAgg(insertograma[i], content7.interior)
-        insertograma_canvas.draw()
-        insertograma_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
-        insertograma_canvas = NavigationToolbar2Tk(insertograma_canvas, content7.interior, pack_toolbar=False)
-        insertograma_canvas.update()
-        insertograma_canvas.pack(fill='both' ) 
+        self.navigation_frame = NavigationFrameModelo1(self.aside)
 
 
 
-modelo1_variables2= {
-    "pesomol": "g/mol",
-    "densidad": "g/m3",
-    "ventana": "int",
-    "electrones": "int",
-    "DLC": "int"
-}
+class Navbar:
+    def __init__(self, root) -> None:
+        self.root = root
+        nav = customtkinter.CTkFrame(self.root, height=100, fg_color='#1d3f60')
+        nav.grid(row=0, column=1, columnspan=10, sticky= 'we')
 
-modelo1_variables = {
-    "pesomol": "g/mol",
-    "densidad": "g/m3",
-    "areasup": "m^2/g",
-    "ventana": "int",
-    "DLC": "int",
-    "electrones": "int"
-}
+class TabView:
+    def __init__(self, root) -> None:
+        self.root = root
+        self.TabTree = customtkinter.CTkTabview(root, state=DISABLED, fg_color='#1D3F60')
+        self.TabTree.grid( row=2, column=3, rowspan=8, columnspan=7, sticky= 'nswe')
+        self.TabTree.add('Muestras 1')
+        self.TabTree.add('Muestras 2')
+        self.TabTree.add('Muestras 3')
+        self.TabTree.add('Muestras 4')
+        self.TabTree.add('Muestras 5')
+        self.TabTree.add('Muestras 6')
+        self.TabTree.add('Muestras 7')        
 
+class SelectableFilesSection:
+    def __init__(self, master) -> None:
+        self.master = master
+        self.list_of_velocities: list[InputSpeed] = list()
+        self.data_files = list()
+        self.selectable_files = customtkinter.CTkFrame( self.master , fg_color='#CFCFCF' , bg_color='#CFCFCF')
+        self.selectable_files.grid_columnconfigure((1,2,3), weight=1)
+        self.selectable_files.grid_rowconfigure(0, weight=0)
+        self.selectable_files.grid(row=0, column=0, columnspan=3, sticky= 'we', padx=5 )
 
-modelo1_respuestas = {
-    "pesomol": " ",
-    "densidad": " ",
-    "areasup": " ",
-    "ventana": " ",
-    "DLC": " ",
-    "electrones": "",
-    "velocidades": []
-}
+        self.see = tk.Listbox(self.selectable_files)
+        self.see.configure(background="#CFCFCF", font=('Aerial 13'))
+        self.see.grid(row=0, column=0, columnspan=4, sticky= 'nswe')    
+            
+        self.btn_select = customtkinter.CTkButton(self.selectable_files, text='Select your files', fg_color='#2ECC71', command=self.select_files)
+        self.btn_select.grid(row=1, column=1, columnspan=1,pady=10, padx=10)
+            
+        self.btn_deselect = customtkinter.CTkButton(self.selectable_files, text='Clear files', fg_color='#2ECC71')
+        self.btn_deselect.grid(row=1, column=2, columnspan=1,pady=10, padx=10)
 
+    def select_files(self) -> None:
+            
+            """
+            Funcion que abre una ventana emergente para poder seleccionar los archivos. 
+            """
+            files = []
+            filez = fd.askopenfilenames(parent=self.selectable_files, title='Choose a file', filetypes=(('text files', 'txt'),))
+            files.append(filez) 
+            files = split_str(files, -1)
+            self.data_files = files
 
+            self.see.clipboard_clear()
+            for i in range(len(files)):
+                self.see.insert(0, (files[i]))
+            vel_var = VelocitiesList(self.master, files, filez, 10)  
+            vel_var.render_list()
+            self.list_of_velocities = vel_var.get_list()
 
-if __name__ == '__main__':
+         #  pyinstaller -F main.py  --collect-all customtkinter -w
 
+class MainScreeen:
+    def __init__(self) -> None:
+        self.root = customtkinter.CTk()
+        self.inizialize_window()      
 
-    customtkinter.set_appearance_mode("Light")  # Modes: "System" (standard), "Dark", "Light"
-    customtkinter.set_default_color_theme("green")  # Themes: "blue" (standard), "green", "dark-blue"
+        self.nav = Navbar(self.root)
+        self.aside = Aside(self.root)
+        self.tabview = TabView(self.root)
+        self.selectable_files = SelectableFilesSection(self.aside.aside)
 
-    files = []
-
-
-    root = customtkinter.CTk()
-    inizialize_window(root)
-
-    root.grid_columnconfigure(1, weight=1)
-    root.grid_columnconfigure(1, weight=1)
-    root.grid_columnconfigure(1, weight=1)
-    root.grid_columnconfigure(2, weight=1)
-    root.grid_columnconfigure(3, weight=1)
-    root.grid_columnconfigure(4, weight=1)
-    root.grid_columnconfigure(5, weight=1)
-    root.grid_columnconfigure(6, weight=1)
-    root.grid_columnconfigure(7, weight=1)
-    root.grid_columnconfigure(8, weight=1)
-    root.grid_columnconfigure(9, weight=1)
-    root.grid_columnconfigure(10, weight=1)
-        
-    root.grid_rowconfigure(1, weight=1)
-    root.grid_rowconfigure(2, weight=1)
-    root.grid_rowconfigure(3, weight=1)
-    root.grid_rowconfigure(4, weight=1)
-    root.grid_rowconfigure(5, weight=1)
-    root.grid_rowconfigure(6, weight=1)
-    root.grid_rowconfigure(7, weight=1)
-    root.grid_rowconfigure(8, weight=1)
-    root.grid_rowconfigure(9, weight=1)
-    root.grid_rowconfigure(10, weight=1)
-    
-    nav = customtkinter.CTkFrame(root, height=100, fg_color='#1d3f60')
-    nav.grid(row=0, column=1, columnspan=10, sticky= 'we')
-
-    #LIST OF RADIO BUTTONS 
-    radio_value = StringVar(value="") 
-    radio_buton_modelo1 = customtkinter.CTkRadioButton(nav, text='Modelo 1', variable=radio_value, value="B", text_color='white', command= lambda: print('activar modelo 1'))
-    radio_buton_modelo1.grid(row=0,column=1, padx=10, pady=10)
-    radio_buton_modelo2 = customtkinter.CTkRadioButton(nav, text='Modelo 2', variable=radio_value, value="A",text_color='white',command= lambda: print('activar modelo 2'))
-    radio_buton_modelo2.grid(row=0,column=2, padx=10, pady=10)    
-
-    aside = customtkinter.CTkFrame(root, width=100, fg_color='#CFCFCF', border_color='#1D3F60', border_width=3)
-    aside.grid_columnconfigure((0,1,2), weight=1)
-    aside.grid_rowconfigure(0, weight=0)
-    aside.grid( row=1, column=1, rowspan=10, sticky= 'nswe' )
-
-    # footer = customtkinter.CTkFrame( root, width=200, height=80)
-    # footer.grid(row=10, column=3, columnspan=7, sticky= 'nswe')
-
-    TabTree = customtkinter.CTkTabview(root, state=DISABLED, fg_color='#1D3F60')
-    TabTree.grid( row=2, column=3, rowspan=8, columnspan=7, sticky= 'nswe')
-    TabTree.add('Muestras 1')
-    TabTree.add('Muestras 2')
-    TabTree.add('Muestras 3')
-    TabTree.add('Muestras 4')
-    TabTree.add('Muestras 5')
-    TabTree.add('Muestras 6')
-    TabTree.add('Muestras 7')
-
+        self.tipo_de_modelo = None
 
     #TREE PARA CAMBIAR DE PESTANA
 
-    main_container = VerticalScrolledFrame( TabTree.tab('Muestras 1'))
-    main_container.pack(fill=BOTH, expand=True)
+        self.main_container = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 1'))
+        self.main_container.pack(fill=BOTH, expand=True)
 
 
-    conntent2 = VerticalScrolledFrame( TabTree.tab('Muestras 2'))
-    conntent2.pack(fill=BOTH, expand=True)
+        self.conntent2 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 2'))
+        self.conntent2.pack(fill=BOTH, expand=True)
 
-    content3 = VerticalScrolledFrame( TabTree.tab('Muestras 3'))
-    content3.pack(fill=BOTH, expand=True)
-
-
-    content4 = VerticalScrolledFrame( TabTree.tab('Muestras 4'))
-    content4.pack(fill=BOTH, expand=True)
+        self.content3 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 3'))
+        self.content3.pack(fill=BOTH, expand=True)
 
 
-    content5 = VerticalScrolledFrame( TabTree.tab('Muestras 5'))
-    content5.pack(fill=BOTH, expand=True)    
+        self.content4 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 4'))
+        self.content4.pack(fill=BOTH, expand=True)
 
 
-    content6 = VerticalScrolledFrame( TabTree.tab('Muestras 6'))
-    content6.pack(fill=BOTH, expand=True)        
+        self.content5 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 5'))
+        self.content5.pack(fill=BOTH, expand=True)    
 
-    content7 = VerticalScrolledFrame( TabTree.tab('Muestras 7'))
-    content7.pack(fill=BOTH, expand=True)          
 
-    #Inputs
-    selectable_files = customtkinter.CTkFrame( aside , fg_color='#CFCFCF' , bg_color='#CFCFCF')
-    selectable_files.grid_columnconfigure((1,2,3), weight=1)
-    selectable_files.grid_rowconfigure(0, weight=0)
-    selectable_files.grid(row=0, column=0, columnspan=3, sticky= 'we', padx=5 )
+        self.content6 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 6'))
+        self.content6.pack(fill=BOTH, expand=True)        
 
-    see = tk.Listbox(selectable_files)
-    see.configure(background="#CFCFCF", font=('Aerial 13'))
-    see.grid(row=0, column=0, columnspan=4, sticky= 'nswe')
+        self.content7 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 7'))
+        self.content7.pack(fill=BOTH, expand=True)            
 
-    #Boton para seleccionar archivos
-    btn_select = customtkinter.CTkButton(selectable_files, text='Select your files', command=select_files, fg_color='#2ECC71')
-    btn_select.grid(row=1, column=1, columnspan=1,pady=10, padx=10)
+        btn_next = customtkinter.CTkButton(self.aside.aside ,text='Continue', 
+                                            fg_color='#2ECC71',
+                                            command=lambda: self.get_data_from_form())
+        btn_next.grid(row=10, column=0)        
+
+
+        self.root.mainloop()
+
+    def get_data_from_form(self) -> None:
+        data: list[float] = (self.aside.navigation_frame.formulario_actual.return_data_inputs())
+        self.tipo_de_modelo = self.aside.navigation_frame.formulario_actual.id
+        self.generate_response(data, self.tipo_de_modelo)
+
+    def generate_response(self,data, id) -> None:
+        """
+        Genera una respuesta para pasarla al Controller para este modelo.
+        """
+        if(id==1):
+            inputdict = CONST.modelo1_masa_activa_respuestas
+                  
+        if(id == 2):
+            inputdict = CONST.modelo1_area_activa_respuestas
+
+        for i,( k, v) in enumerate(inputdict.items()):
+            if(i<len(data)):
+                inputdict[k] = data[i]
+
+
+        paths, values = self.get_velocities_info()
+        print(paths, values)
+
+        inputdict['velocidades'] = values
+
+        response = EntradaModelo1(inputdict, values, paths)
         
-    btn_deselect = customtkinter.CTkButton(selectable_files, text='Clear files', command=clear_files, fg_color='#2ECC71')
-    btn_deselect.grid(row=1, column=2, columnspan=1,pady=10, padx=10)
+        self.call_controller(response, id)
 
-    navigation_frame = customtkinter.CTkFrame(aside, corner_radius=0,  fg_color='#CFCFCF')
-    navigation_frame.grid(row=3, column=0, sticky="nsew",  columnspan=4, padx=5)
-    navigation_frame.grid_rowconfigure(10, weight=1)
+
+    def get_velocities_info(self) -> tuple[list[str], list[int]]:
+        """
+        Toma los datos de los archivos y las velocidades de las entradas.
+        """
+        paths: list[str] = list()
+        values: list[int] = list()
+
+        #Recibir los datos del path del archivo.
+        for i in range(len(self.selectable_files.list_of_velocities)):
+            paths.append(self.selectable_files.list_of_velocities[i].get_path())
+
+        #Recibe los datos del entrie del formulario de velocidades.
+        for i in range(len(self.selectable_files.list_of_velocities)):
+            values.append(float(self.selectable_files.list_of_velocities[i].return_info()))            
+
+        return paths, values
+
+    def call_controller(self, response: EntradaModelo1, id: int) -> None:
+        """
+        Llama al controlador para manejar todos los datos.
+        """
+        if(self.tipo_de_modelo == 1 or 2):
+            controller = ControllerModelo1(response, self.tipo_de_modelo)
+            interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs = controller.manage_data()
+
+        print(interpolacion)
+
+        self.render_modelo1(interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs)
+
+    def render_modelo1(self,interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs):
         
-    #Inputs 
+        #Renderizar grafica de oxidacion
+        canvasOxidacion = FigureCanvasTkAgg(oxidacion, self.conntent2.interior)
+        canvasOxidacion.draw()
+        canvasOxidacion.get_tk_widget().pack(fill='both', pady=20, padx=20)
 
-    ##Tipo de datos y normalzacion
+        navbar_tool_bar2 = NavigationToolbar2Tk(canvasOxidacion, self.conntent2.interior, pack_toolbar=False)
+        navbar_tool_bar2.update()
+        navbar_tool_bar2.pack(fill='both' )  
+
+        bars_canvas = FigureCanvasTkAgg(bars, self.content4.interior)
+        bars_canvas.draw()
+        bars_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
+        navbar_tool_bar = NavigationToolbar2Tk(bars_canvas, self.content4.interior, pack_toolbar=False)
+        navbar_tool_bar.update()
+        navbar_tool_bar.pack(fill='both' )      
+
+
+        #Este for se encarga de plotear y renderizar las graficas en las diferentes ramas del arbol 
+        for i in range(len(interpolacion)): 
+            canvas = FigureCanvasTkAgg(interpolacion[i], self.main_container.interior)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
+            navbar_tool_bar = NavigationToolbar2Tk(canvas, self.main_container.interior, pack_toolbar=False)
+            navbar_tool_bar.update()
+            navbar_tool_bar.pack(fill='both' )
+
+            corriente_canvas = FigureCanvasTkAgg(corriente_total[i], self.content3.interior)
+            corriente_canvas.draw()
+            corriente_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
+            navbar_tool_bar = NavigationToolbar2Tk(corriente_canvas, self.content3.interior, pack_toolbar=False)
+            navbar_tool_bar.update()
+            navbar_tool_bar.pack(fill='both' )
     
-    introduccion_dato = StringVar(value='Opcion1')
+            porcentaje_canvas = FigureCanvasTkAgg(porcentaje[i], self.content5.interior)
+            porcentaje_canvas.draw()
+            porcentaje_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
+            porcentaje_canvas = NavigationToolbar2Tk(porcentaje_canvas, self.content5.interior, pack_toolbar=False)
+            porcentaje_canvas.update()
+            porcentaje_canvas.pack(fill='both' )              
 
-    input_1 = customtkinter.CTkRadioButton(navigation_frame, text='Opcion1', variable=introduccion_dato, value="Opcion1", command= lambda: print(introduccion_dato.get()))
-    input_1.grid( row=0, column=0, padx=10  )
+            masograna_canvas = FigureCanvasTkAgg(masograma[i], self.content6.interior)
+            masograna_canvas.draw()
+            masograna_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
+            masograna_canvas = NavigationToolbar2Tk(masograna_canvas, self.content6.interior, pack_toolbar=False)
+            masograna_canvas.update()
+            masograna_canvas.pack(fill='both' )          
 
-    input_2 = customtkinter.CTkRadioButton(navigation_frame, text='Opcion2', variable=introduccion_dato, value="Opcion2", command= lambda: print(introduccion_dato.get()))
-    input_2.grid( row=0, column=1, padx=10  )
+            insertograma_canvas = FigureCanvasTkAgg(insertograma[i], self.content7.interior)
+            insertograma_canvas.draw()
+            insertograma_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
+            insertograma_canvas = NavigationToolbar2Tk(insertograma_canvas, self.content7.interior, pack_toolbar=False)
+            insertograma_canvas.update()
+            insertograma_canvas.pack(fill='both' )
+
+            self.tabview.TabTree.configure(state='Activate')
     
-    
-    modelo = ModeloUnoAreaActiva(navigation_frame, modelo1_variables)
-    lista_variables_asig = modelo.lista_variables_asig
+    def inizialize_window(self) -> None:
+            self.root.title( 'SuperCapacitoresSoftware' )
+            width= self.root.winfo_screenwidth()
+            height= self.root.winfo_screenheight()    
+            self.root.minsize( width= width, height= height)
+            self.root.state('zoomed')
+            self.root.grid_columnconfigure(1, weight=1)
+            self.root.grid_columnconfigure(1, weight=1)
+            self.root.grid_columnconfigure(1, weight=1)
+            self.root.grid_columnconfigure(2, weight=1)
+            self.root.grid_columnconfigure(3, weight=1)
+            self.root.grid_columnconfigure(4, weight=1)
+            self.root.grid_columnconfigure(5, weight=1)
+            self.root.grid_columnconfigure(6, weight=1)
+            self.root.grid_columnconfigure(7, weight=1)
+            self.root.grid_columnconfigure(8, weight=1)
+            self.root.grid_columnconfigure(9, weight=1)
+            self.root.grid_columnconfigure(10, weight=1)
+                
+            self.root.grid_rowconfigure(1, weight=1)
+            self.root.grid_rowconfigure(2, weight=1)
+            self.root.grid_rowconfigure(3, weight=1)
+            self.root.grid_rowconfigure(4, weight=1)
+            self.root.grid_rowconfigure(5, weight=1)
+            self.root.grid_rowconfigure(6, weight=1)
+            self.root.grid_rowconfigure(7, weight=1)
+            self.root.grid_rowconfigure(8, weight=1)
+            self.root.grid_rowconfigure(9, weight=1)
+            self.root.grid_rowconfigure(10, weight=1)            
 
+if __name__ == '__main__':
+    M = MainScreeen()
 
-    btn_next = customtkinter.CTkButton(navigation_frame,text='Continue', 
-                                           command=(get_variables_modelo1), fg_color='#2ECC71')
-    btn_next.grid()
-            
-    frame_option = FrameOptionsOutputs(aside)  
-    
-    root.mainloop()
 
