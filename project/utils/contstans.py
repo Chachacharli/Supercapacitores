@@ -3,21 +3,21 @@
 #CONSTANTES DEL PRIMER MODELO 
 
 modelo1_masa_activa= {
-    "pesomol": "g/mol",
-    "densidad": "g/m3",
-    "masalec": "m^2/g",
-    "ventana": "int",
-    "electrones": "int",
-    "DLC": "int"
+    "Molecular Mass of active ion": "g/mol",
+    "Active material density": "g/m3",
+    "Mass of Active Material": "m^2/g",
+    "Potencial steps": "int",
+    "Number of electrons": "int",
+    "Electric doblue layer capacitance (Trassati)": "int"
 }
 
 modelo1_area_activa = {
-    "pesomol": "g/mol",
-    "densidad": "g/m3",
-    "areasup": "m^2/g",
-    "ventana": "int",
-    "DLC": "int",
-    "electrones": "int"
+    "Molecular Mass of active ion": "g/mol",
+    "Active material density": "g/m3",
+    "Geometrical superficial area": "m^2/g",
+    "Potencial steps": "int",
+    "Number of electrons": "int",
+    "Electric doblue layer capacitance (Trassati)": "int",
 }
 
 

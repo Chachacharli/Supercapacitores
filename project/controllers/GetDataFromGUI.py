@@ -41,11 +41,18 @@ class GraphBars:
         
         plt.cla()
         self.fig, self.ax = plt.subplots(1,1)
-        self.ax.bar(data.velocidad, data.capacitiva, label='Capacitive')
-        self.ax.bar(data.velocidad, data.difusiva, bottom=data.capacitiva, label='Pseudocapacitive')
+        self.ax.bar(data.velocidad, data.capacitiva, label='Pseudocapacitive')
+        self.ax.bar(data.velocidad, data.difusiva, bottom=data.capacitiva, label='Difusiva')
         self.ax.bar(data.velocidad, data.dlc, bottom=np.add(data.capacitiva,data.difusiva), label='DLC')
         self.ax.legend()
         
+        #Porcentaje 
+        ## Y Charge (%)
+        ## X Scan rate m*s^-1
+
+        #Eje en X  Scan rate m*s^-1
+        #Eje en Y Specific charge C*g^-1
+
     def get_canvas(self):
         return self.fig
 

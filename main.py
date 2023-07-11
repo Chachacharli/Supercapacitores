@@ -28,6 +28,7 @@ from project.views.MainInput import MainInput
 from project.views.VelocitiesList import VelocitiesList, InputSpeed
 from project.views.FrameOptionsOutputs import FrameOptionsOutputs
 from project.views.VerticalScrolledFrame import VerticalScrolledFrame
+from project.views.SelectableFileSection import SelectableFilesSection
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
 ## INTERFACES 
@@ -110,14 +111,16 @@ class NavigationFrameModelo1:
 class Aside:
     def __init__(self, root) -> None:
         self.root = root
-
-        self.aside = customtkinter.CTkFrame(self.root, width=100, fg_color='#CFCFCF', border_color='#1D3F60', border_width=3)
-        self.aside.grid_columnconfigure((0,1,2), weight=1)
+        self.aside = customtkinter.CTkFrame(self.root, width=100,height=500, fg_color='#CFCFCF', border_color='#1D3F60', border_width=3)
+        self.aside.grid_columnconfigure(0, weight=0)
         self.aside.grid_rowconfigure(0, weight=0)
-        self.aside.grid( row=1, column=1, rowspan=10, sticky= 'nswe' )
+        self.aside.grid( row=1, column=1, rowspan=10, sticky= 'nswe', padx=(0))
+    
+        self.container_scroll = VerticalScrolledFrame(self.aside)
+        self.container_scroll.grid(row=1, column=0, rowspan=10, sticky= 'nswe', padx=(0))
 
-        self.navigation_frame = NavigationFrameModelo1(self.aside)
-
+        self.selectable_files = SelectableFilesSection(self.container_scroll.interior)
+        self.navigation_frame = NavigationFrameModelo1(self.container_scroll.interior)
 
 
 class Navbar:
@@ -131,51 +134,15 @@ class TabView:
         self.root = root
         self.TabTree = customtkinter.CTkTabview(root, state=DISABLED, fg_color='#1D3F60')
         self.TabTree.grid( row=2, column=3, rowspan=8, columnspan=7, sticky= 'nswe')
-        self.TabTree.add('Muestras 1')
-        self.TabTree.add('Muestras 2')
-        self.TabTree.add('Muestras 3')
-        self.TabTree.add('Muestras 4')
-        self.TabTree.add('Muestras 5')
-        self.TabTree.add('Muestras 6')
-        self.TabTree.add('Muestras 7')        
+        self.TabTree.add('Interpolation')  ## EJES I/cm-2 or I/g^-1
+        self.TabTree.add('Obtaining of K')  ## Y m*V^1/2 miliamper mA*Vs-1/2 X   ##OBTENCION DE K
+        self.TabTree.add('VOLTAMPEROGRAM')  ## VOLTAMPEROGRAMAS ESTIMADA VOLTAPEROGRAM
+        self.TabTree.add('Total Q')  ##  TOTAL 
+        self.TabTree.add('Q%')  ## Q%
+        self.TabTree.add('MASOGRAMA')  ## MASOGRAMA 
+        self.TabTree.add('ACTIVE THICKNESS')  ## ACTIVE THICKNESS
 
-class SelectableFilesSection:
-    def __init__(self, master) -> None:
-        self.master = master
-        self.list_of_velocities: list[InputSpeed] = list()
-        self.data_files = list()
-        self.selectable_files = customtkinter.CTkFrame( self.master , fg_color='#CFCFCF' , bg_color='#CFCFCF')
-        self.selectable_files.grid_columnconfigure((1,2,3), weight=1)
-        self.selectable_files.grid_rowconfigure(0, weight=0)
-        self.selectable_files.grid(row=0, column=0, columnspan=3, sticky= 'we', padx=5 )
 
-        self.see = tk.Listbox(self.selectable_files)
-        self.see.configure(background="#CFCFCF", font=('Aerial 13'))
-        self.see.grid(row=0, column=0, columnspan=4, sticky= 'nswe')    
-            
-        self.btn_select = customtkinter.CTkButton(self.selectable_files, text='Select your files', fg_color='#2ECC71', command=self.select_files)
-        self.btn_select.grid(row=1, column=1, columnspan=1,pady=10, padx=10)
-            
-        self.btn_deselect = customtkinter.CTkButton(self.selectable_files, text='Clear files', fg_color='#2ECC71')
-        self.btn_deselect.grid(row=1, column=2, columnspan=1,pady=10, padx=10)
-
-    def select_files(self) -> None:
-            
-            """
-            Funcion que abre una ventana emergente para poder seleccionar los archivos. 
-            """
-            files = []
-            filez = fd.askopenfilenames(parent=self.selectable_files, title='Choose a file', filetypes=(('text files', 'txt'),))
-            files.append(filez) 
-            files = split_str(files, -1)
-            self.data_files = files
-
-            self.see.clipboard_clear()
-            for i in range(len(files)):
-                self.see.insert(0, (files[i]))
-            vel_var = VelocitiesList(self.master, files, filez, 10)  
-            vel_var.render_list()
-            self.list_of_velocities = vel_var.get_list()
 
          #  pyinstaller -F main.py  --collect-all customtkinter -w
 
@@ -187,38 +154,38 @@ class MainScreeen:
         self.nav = Navbar(self.root)
         self.aside = Aside(self.root)
         self.tabview = TabView(self.root)
-        self.selectable_files = SelectableFilesSection(self.aside.aside)
 
         self.tipo_de_modelo = None
 
     #TREE PARA CAMBIAR DE PESTANA
 
-        self.main_container = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 1'))
+        self.main_container = VerticalScrolledFrame( self.tabview.TabTree.tab('Interpolation'))
         self.main_container.pack(fill=BOTH, expand=True)
 
 
-        self.conntent2 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 2'))
+        self.conntent2 = VerticalScrolledFrame( self.tabview.TabTree.tab('Obtaining of K'))
         self.conntent2.pack(fill=BOTH, expand=True)
 
-        self.content3 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 3'))
+        self.content3 = VerticalScrolledFrame( self.tabview.TabTree.tab('VOLTAMPEROGRAM'))
         self.content3.pack(fill=BOTH, expand=True)
 
 
-        self.content4 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 4'))
+        self.content4 = VerticalScrolledFrame( self.tabview.TabTree.tab('Total Q'))
         self.content4.pack(fill=BOTH, expand=True)
 
 
-        self.content5 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 5'))
+        self.content5 = VerticalScrolledFrame( self.tabview.TabTree.tab('Q%'))
         self.content5.pack(fill=BOTH, expand=True)    
 
 
-        self.content6 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 6'))
+        self.content6 = VerticalScrolledFrame( self.tabview.TabTree.tab('MASOGRAMA'))
         self.content6.pack(fill=BOTH, expand=True)        
 
-        self.content7 = VerticalScrolledFrame( self.tabview.TabTree.tab('Muestras 7'))
+        self.content7 = VerticalScrolledFrame( self.tabview.TabTree.tab('ACTIVE THICKNESS'))
         self.content7.pack(fill=BOTH, expand=True)            
 
-        btn_next = customtkinter.CTkButton(self.aside.aside ,text='Continue', 
+       
+        btn_next = customtkinter.CTkButton(self.aside.container_scroll.interior ,text='Continue', 
                                             fg_color='#2ECC71',
                                             command=lambda: self.get_data_from_form())
         btn_next.grid(row=10, column=0)        
@@ -264,12 +231,12 @@ class MainScreeen:
         values: list[int] = list()
 
         #Recibir los datos del path del archivo.
-        for i in range(len(self.selectable_files.list_of_velocities)):
-            paths.append(self.selectable_files.list_of_velocities[i].get_path())
+        for i in range(len(self.aside.selectable_files.list_of_velocities)):
+            paths.append(self.aside.selectable_files.list_of_velocities[i].get_path())
 
         #Recibe los datos del entrie del formulario de velocidades.
-        for i in range(len(self.selectable_files.list_of_velocities)):
-            values.append(float(self.selectable_files.list_of_velocities[i].return_info()))            
+        for i in range(len(self.aside.selectable_files.list_of_velocities)):
+            values.append(float(self.aside.selectable_files.list_of_velocities[i].return_info()))            
 
         return paths, values
 
@@ -377,3 +344,17 @@ if __name__ == '__main__':
     M = MainScreeen()
 
 
+# Molecular Mass of active ion
+# Active material density 
+# Geometrical superficial area
+# Potencial steps
+# Electric doblue layer capacitance (Trassati)
+# Number of electrons
+# Mass of Active Material
+
+# cambio
+# DLC
+# densidad activa
+# peso mol
+# num electrones
+# ventana

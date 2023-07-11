@@ -28,21 +28,25 @@ class OutputData:
 
 class Muestra1:
     def __init__(self, UExp , IExp, UExppos, IExppos, velocidad) -> None:
-        fig, axs = plt.subplots(1,1, dpi = 80, figsize= (10,10))
+        fig, ax = plt.subplots(1,1, dpi = 80, figsize= (10,10))
         fig.suptitle(f'velocidad: {velocidad}') 
-        axs.plot( UExp,IExp )
-        axs.scatter(UExppos, IExppos, c='red')
+        ax.plot( UExp,IExp , label='Experimental data')
+        ax.scatter(UExppos, IExppos, c='red', label='Interpolate data')
+        ax.set_ylabel('I/cm-2')
+        ax.set_xlabel('U')  
+        ax.legend()        
         self.canvas = fig
     
 class CorrienteTotal:
     def __init__(self, linspace_varr, UExp , IExp, Imodelpos, Imodelneg, velocidad) -> None:
         fig, ax = plt.subplots(1,1, dpi = 80, figsize= (10,10))
         fig.suptitle(f'Velocidad C&D: {velocidad} mV/s')
-        ax.plot( UExp, IExp)
-        ax.plot(linspace_varr[0: len(linspace_varr)-1 ],Imodelpos, 'o b')   
-        ax.plot(linspace_varr[0: len(linspace_varr)-1 ], Imodelneg, 'o r')        
+        ax.plot( UExp, IExp, label='Experimental data')
+        ax.plot(linspace_varr[0: len(linspace_varr)-1 ],Imodelpos, 'o b', label='ImodelPos' )   
+        ax.plot(linspace_varr[0: len(linspace_varr)-1 ], Imodelneg, 'o r', label='ImodelPos')        
         ax.set_ylabel('I (A/g)')
         ax.set_xlabel('U (V)')  
+        ax.legend()        
         self.canvas = fig
 
 
@@ -566,7 +570,18 @@ class SimpleCSV2(IDataFile):
         fig, ax = plt.subplots(1,1)
         ax.plot(self.linspace_varr[0][0:len(self.linspace_varr[0])-1], self.inserneg)
         ax.plot(self.linspace_varr[0][0:len(self.linspace_varr[0])-1], self.insert, 'b')
+        ax.set_xlabel('E(V vs Electrodo')
+        ax.set_ylabel('Active Thickness nm')
         return fig
+
+        #Muestra 6 Active Thickness
+        ## X E(V vs Electrodo "Electrodo es input de usuario") 
+        ## Y ACtive Thickness nm
+
+
+        ## M ng
+        ## V
+        
 
     def bars(self) -> Barras:
         """

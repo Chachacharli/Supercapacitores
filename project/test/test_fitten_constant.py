@@ -23,17 +23,28 @@ def capacitive(t: np.ndarray, t0: float, E: float, Rs: float, Cdl: float, B: flo
 
 def decay_model(t: np.ndarray, t0: float, E: float, Rs: float, Cdl: float, B: float) -> np.ndarray:
     i = (capacitive(t, t0, E, Rs, Cdl, B)
-        + diffusive(t, t0, E, Rs, Cdl, B))
+        + diffusive(t, t0, E, Rs, Cdl, B)
+        + E )
     return i
 
 
 model_f = np.vectorize(model_f)
 
 
+timepo_actual = 2.47E+02 + (5*60)
+rango = 5*60
+
+
+
 if __name__ == '__main__':
 
+
+
     df = pd.read_csv(r'C:\Users\TCCA_\OneDrive\Escritorio\GUI_SUPERCAPACITORES\raw_data.csv', names=['time', 'current'], skiprows=1)
-    print(df)
+    #print(df)
+    
+
+    
 
     df.time -= df.time.min()
     df = df[
@@ -48,13 +59,13 @@ if __name__ == '__main__':
             (10,    1,    1, 1e3,   1),
         ),
     )
-    print(popt)
+    #print(popt)
     
     fig, ax = plt.subplots()
-    plt.plot(df.time, df.current, label='Original data')
-    ax.semilogx(df.time, diffusive(df.time, *popt), label='Diffusive fit')
-    ax.semilogx(df.time, capacitive(df.time, *popt), label='Capacitive fit')
-    ax.semilogx(df.time, decay_model(df.time, *popt), label='Total fit')
+    # plt.plot(df.time, df.current, label='Original data')
+    # ax.semilogx(df.time, diffusive(df.time, *popt), label='Diffusive fit')
+    # ax.semilogx(df.time, capacitive(df.time, *popt), label='Capacitive fit')
+    # ax.semilogx(df.time, decay_model(df.time, *popt), label='Total fit')
 
-    plt.legend()
-    plt.show()
+    # plt.legend()
+    #plt.show()

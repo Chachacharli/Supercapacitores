@@ -61,8 +61,8 @@ class GOxidacion:
         ax = fig.add_subplot()   
         ax.set_title('OXIDACION')
         ax.plot(Ukpos,IKpos)
-        ax.set_ylabel('Intensity')
-        ax.set_xlabel('Scan rate')  
+        ax.set_ylabel('m(V^1/2)')
+        ax.set_xlabel('mA(Vs-1/2)')  
 
         self.canvas = fig
 
