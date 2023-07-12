@@ -10,6 +10,7 @@ from PIL import Image
 import os
 import sys
 from dataclasses import dataclass
+from tkinter import messagebox
 
 #constantes
 import project.utils.contstans as CONST
@@ -42,7 +43,7 @@ from project.controllers.ControllerModelo1 import ControllerModelo1
 
 
 class ModeloUnoFormulario(IModelosInputs):
-    def __init__(self, master, id, diccionario):
+    def __init__(self, master: tk.Frame, id: str, diccionario: dict):
         super().__init__(diccionario)
         self.id = id
         self.frame = customtkinter.CTkFrame(master=master, fg_color='#CFCFCF')
@@ -51,16 +52,17 @@ class ModeloUnoFormulario(IModelosInputs):
         self.crear_widgets()
 
     def crear_widgets(self):
-        self.etiqueta = customtkinter.CTkLabel(self.frame)
         for i,( c, v) in enumerate(self.dict_var.items()):
             self.list_inputs.append(MainInput(self.frame,i, c, v, self.lista_variables_asig[i]))         
-        self.etiqueta.grid()
 
     def return_data_inputs(self):
         lista_data = list()
         for i in range(len(self.list_inputs)):
-            lista_data.append(float(self.list_inputs[i].entrie_din.get()))
-
+            try:
+                lista_data.append(float(self.list_inputs[i].entrie_din.get()))
+            except ValueError:
+                lista_data.append(None)
+            
         return lista_data
 
 class NavigationFrameModelo1:
@@ -80,15 +82,15 @@ class NavigationFrameModelo1:
 
         self.input_1 = customtkinter.CTkRadioButton(self.navigation_frame, text='Masa Activa', 
                                             variable=self.introduccion_dato, 
-                                            value="Opcion1",
-                                            command=lambda: self.render_form(self.introduccion_dato.get()))
+                                            value="Masa Activa",
+                                            )
         
         self.input_1.grid( row=0, column=0, padx=10, pady=10  )
 
         self.input_2 = customtkinter.CTkRadioButton(self.navigation_frame, text='Area Activa', 
                                             variable=self.introduccion_dato, 
-                                            value="Opcion2", 
-                                            command= lambda: self.render_form(self.introduccion_dato.get()))
+                                            value="Area Activa", 
+                                            )
         
         self.input_2.grid( row=0, column=1, padx=10, pady=10  )
 
@@ -98,7 +100,7 @@ class NavigationFrameModelo1:
         if self.formulario_actual is not None:
             self.formulario_actual.frame.grid_forget()
 
-        if(into == 'Opcion1'):
+        if(into == 'Masa Activa'):
             self.formulario_actual = ModeloUnoFormulario(self.master,1, self.dict_modelo_masa_activa )
         else:         
             self.formulario_actual = ModeloUnoFormulario(self.master,2, self.dict_modelo_area_activa )
@@ -108,6 +110,57 @@ class NavigationFrameModelo1:
     def get_data_from_form(self):
         print(self.formulario_actual.return_data_inputs())
 
+class WindowInput(tk.Toplevel):
+    """
+    Clase que se encarga de abrir el formulario en una ventana emergente.
+    :param: ventana_inicial: es la ventana de la que emerge.
+    """
+    def __init__(self, ventana_inicial: any, formulario: str):
+        super().__init__(ventana_inicial)
+        self.resizable(False, False)
+        self.dict_modelo_masa_activa = CONST.modelo1_masa_activa
+        self.dict_modelo_area_activa = CONST.modelo1_area_activa
+        self.title(formulario)
+        
+        
+
+        if(formulario == 'Masa Activa'):
+            self.formulario_actual = ModeloUnoFormulario(self,1, self.dict_modelo_masa_activa )
+        else:         
+            self.formulario_actual = ModeloUnoFormulario(self,2, self.dict_modelo_area_activa )
+        
+        self.formulario_actual.frame.grid(row=2, column=0)        
+        
+        self.frame_btn = customtkinter.CTkFrame(self, fg_color='#CFCFCF' )
+        self.frame_btn.grid_rowconfigure(0, weight=1)
+        self.frame_btn.grid_columnconfigure(0, weight=1)
+        self.frame_btn.grid( sticky= 'nswe' )
+
+        self.message_frame = customtkinter.CTkFrame(self, fg_color='#CFCFCF')
+        self.message_frame.grid_rowconfigure(0, weight=1)
+        self.message_frame.grid_columnconfigure(0, weight=1)
+        
+        self.btn = customtkinter.CTkButton(self.frame_btn, 
+                                           text='Accept', 
+                                           fg_color='#2CC985',
+                                           command=lambda: self.handlerData())
+        self.btn.grid(sticky='nswe', padx=50, pady=10)
+
+    def handlerData(self) -> None:
+        print('HANDLER DATA')
+        array = self.formulario_actual.return_data_inputs()
+        if all(isinstance(valor, float) for valor in array):
+            print(array)
+        else: 
+            if self.message_frame.winfo_ismapped():
+                self.message_frame.grid_forget()
+                self.label.grid_forget()
+                
+            else:    
+                self.message_frame.grid( sticky= 'nswe' )
+                self.label = customtkinter.CTkLabel(self.message_frame, text='Introduce correctamente los datos: Algun dato no es numerico', text_color='#B71C1C')
+                self.label.grid()
+                
 class Aside:
     def __init__(self, root) -> None:
         self.root = root
@@ -116,11 +169,8 @@ class Aside:
         self.aside.grid_rowconfigure(0, weight=0)
         self.aside.grid( row=1, column=1, rowspan=10, sticky= 'nswe', padx=(0))
     
-        self.container_scroll = VerticalScrolledFrame(self.aside)
-        self.container_scroll.grid(row=1, column=0, rowspan=10, sticky= 'nswe', padx=(0))
-
-        self.selectable_files = SelectableFilesSection(self.container_scroll.interior)
-        self.navigation_frame = NavigationFrameModelo1(self.container_scroll.interior)
+        self.selectable_files = SelectableFilesSection(self.aside)
+        self.navigation_frame = NavigationFrameModelo1(self.aside)
 
 
 class Navbar:
@@ -182,14 +232,23 @@ class MainScreeen:
         self.content6.pack(fill=BOTH, expand=True)        
 
         self.content7 = VerticalScrolledFrame( self.tabview.TabTree.tab('ACTIVE THICKNESS'))
-        self.content7.pack(fill=BOTH, expand=True)            
+        self.content7.pack(fill=BOTH, expand=True)       
+
+
+
 
        
-        btn_next = customtkinter.CTkButton(self.aside.container_scroll.interior ,text='Continue', 
+        self.btn_next = customtkinter.CTkButton(self.aside.aside ,text='Continue', 
                                             fg_color='#2ECC71',
                                             command=lambda: self.get_data_from_form())
-        btn_next.grid(row=10, column=0)        
+        self.btn_next.grid(row=10, column=0)        
 
+
+       
+        self.open_form = customtkinter.CTkButton(self.aside.aside ,text='Open form', 
+                                            fg_color='#2ECC71',
+                                            command=lambda: self.abrir_formulario())
+        self.open_form.grid(row=10, column=1)  
 
         self.root.mainloop()
 
@@ -338,7 +397,17 @@ class MainScreeen:
             self.root.grid_rowconfigure(7, weight=1)
             self.root.grid_rowconfigure(8, weight=1)
             self.root.grid_rowconfigure(9, weight=1)
-            self.root.grid_rowconfigure(10, weight=1)            
+            self.root.grid_rowconfigure(10, weight=1)          
+
+    def abrir_formulario(self):
+        opcion = self.aside.navigation_frame.introduccion_dato.get()
+        print(opcion)
+        if opcion == "Masa Activa":
+            formulario1 = WindowInput(self.root, opcion)
+        elif opcion == "Area Activa":
+            formulario2 = WindowInput(self.root, opcion)
+
+        # self.root.withdraw()  # Ocultar la ventana inicial    
 
 if __name__ == '__main__':
     M = MainScreeen()
