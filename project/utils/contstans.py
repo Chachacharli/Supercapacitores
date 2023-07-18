@@ -41,4 +41,7 @@ modelo1_masa_activa_respuestas= {
     "velocidades": []
 }
 
-
+modelos = {
+    'MASA_ACTIVA': 'Masa Activa',
+    'AREA_ACTIVA': 'Area Activa'
+}

@@ -2,25 +2,13 @@
 import tkinter as tk
 from tkinter import StringVar
 import customtkinter
-import tkinter.filedialog as fd
 import tkinter as tk
-import tkinter.ttk as ttk
-import numpy as np
-from PIL import Image
-import os
-import sys
-from dataclasses import dataclass
-from tkinter import messagebox
 
 #constantes
 import project.utils.contstans as CONST
 from tkinter.constants import *
 
 #Classes
-
-## MODELOS
-from project.models.DataFile import SimpleCSV
-
 ## DATACLASSES
 from project.models.DataClasses import EntradaModelo1
 
@@ -34,8 +22,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
 ## INTERFACES 
 from project.interfaces.IModelosInputs import IModelosInputs
-
-from project.utils.split_str import split_str
 
 #Controllers
 from project.controllers.ControllerModelo1 import ControllerModelo1
@@ -69,6 +55,7 @@ class NavigationFrameModelo1:
     def __init__(self, master) -> None:
         
         self.master = master
+        self.modelo_actual = None
 
         self.dict_modelo_masa_activa = CONST.modelo1_masa_activa
         self.dict_modelo_area_activa = CONST.modelo1_area_activa
@@ -101,10 +88,12 @@ class NavigationFrameModelo1:
             self.formulario_actual.frame.grid_forget()
 
         if(into == 'Masa Activa'):
+            self.modelo_actual = 1
             self.formulario_actual = ModeloUnoFormulario(self.master,1, self.dict_modelo_masa_activa )
         else:         
+            self.modelo_actual = 2
             self.formulario_actual = ModeloUnoFormulario(self.master,2, self.dict_modelo_area_activa )
-        
+
         self.formulario_actual.frame.grid(row=2, column=0)        
          
     def get_data_from_form(self):
@@ -115,8 +104,9 @@ class WindowInput(tk.Toplevel):
     Clase que se encarga de abrir el formulario en una ventana emergente.
     :param: ventana_inicial: es la ventana de la que emerge.
     """
-    def __init__(self, ventana_inicial: any, formulario: str):
+    def __init__(self, ventana_inicial: any, formulario: str, parent: customtkinter.CTk):
         super().__init__(ventana_inicial)
+        self.parent = parent
         self.resizable(False, False)
         self.dict_modelo_masa_activa = CONST.modelo1_masa_activa
         self.dict_modelo_area_activa = CONST.modelo1_area_activa
@@ -147,10 +137,13 @@ class WindowInput(tk.Toplevel):
         self.btn.grid(sticky='nswe', padx=50, pady=10)
 
     def handlerData(self) -> None:
-        print('HANDLER DATA')
+        """
+        Es el manejo de los datos, pasa los valores del formulario mediante un array a la instancia data de el padre. 
+        """
         array = self.formulario_actual.return_data_inputs()
         if all(isinstance(valor, float) for valor in array):
-            print(array)
+            print(self.parent.data)
+            self.parent.data = array
         else: 
             if self.message_frame.winfo_ismapped():
                 self.message_frame.grid_forget()
@@ -194,8 +187,6 @@ class TabView:
 
 
 
-         #  pyinstaller -F main.py  --collect-all customtkinter -w
-
 class MainScreeen:
     def __init__(self) -> None:
         self.root = customtkinter.CTk()
@@ -206,6 +197,8 @@ class MainScreeen:
         self.tabview = TabView(self.root)
 
         self.tipo_de_modelo = None
+        self.fomrulario: WindowInput = None
+        self.data: list = list()
 
     #TREE PARA CAMBIAR DE PESTANA
 
@@ -253,14 +246,17 @@ class MainScreeen:
         self.root.mainloop()
 
     def get_data_from_form(self) -> None:
-        data: list[float] = (self.aside.navigation_frame.formulario_actual.return_data_inputs())
-        self.tipo_de_modelo = self.aside.navigation_frame.formulario_actual.id
-        self.generate_response(data, self.tipo_de_modelo)
+        """
+        Toma el tipo de modelo en base a la ventana emergente del formulario.
+        """
+        self.tipo_de_modelo = self.fomrulario.formulario_actual.id              
+        self.generate_response(self.data, self.tipo_de_modelo)
 
     def generate_response(self,data, id) -> None:
         """
         Genera una respuesta para pasarla al Controller para este modelo.
         """
+        print(id)
         if(id==1):
             inputdict = CONST.modelo1_masa_activa_respuestas
                   
@@ -301,13 +297,11 @@ class MainScreeen:
 
     def call_controller(self, response: EntradaModelo1, id: int) -> None:
         """
-        Llama al controlador para manejar todos los datos.
+        Llama al controlador para manejar todos los datos. Posteriormente renderiza las graficas.
         """
         if(self.tipo_de_modelo == 1 or 2):
             controller = ControllerModelo1(response, self.tipo_de_modelo)
             interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs = controller.manage_data()
-
-        print(interpolacion)
 
         self.render_modelo1(interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs)
 
@@ -401,11 +395,10 @@ class MainScreeen:
 
     def abrir_formulario(self):
         opcion = self.aside.navigation_frame.introduccion_dato.get()
-        print(opcion)
         if opcion == "Masa Activa":
-            formulario1 = WindowInput(self.root, opcion)
+            self.fomrulario = WindowInput(self.root, opcion, self)
         elif opcion == "Area Activa":
-            formulario2 = WindowInput(self.root, opcion)
+            self.fomrulario = WindowInput(self.root, opcion, self)
 
         # self.root.withdraw()  # Ocultar la ventana inicial    
 
