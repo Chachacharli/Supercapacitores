@@ -23,13 +23,12 @@ class SelectableFilesSection:
         self.btn_select = customtkinter.CTkButton(self.selectable_files, text='Select your files', fg_color='#2ECC71', command=self.select_files)
         self.btn_select.grid(row=1, column=1, columnspan=1,pady=10, padx=10)
             
-        self.btn_deselect = customtkinter.CTkButton(self.selectable_files, text='Clear files', fg_color='#2ECC71')
+        self.btn_deselect = customtkinter.CTkButton(self.selectable_files, text='Clear files', fg_color='#2ECC71', command=lambda: self.clear_files())
         self.btn_deselect.grid(row=1, column=2, columnspan=1,pady=10, padx=10)
         
     def select_files(self) -> None:
-            
             """
-            Funcion que abre una ventana emergente para poder seleccionar los archivos. 
+            Funcion que abre una ventana emergente para poder seleccionar los archivos.
             """
             files = []
             filez = fd.askopenfilenames(parent=self.selectable_files, title='Choose a file', filetypes=(('text files', 'txt'),))
@@ -40,6 +39,11 @@ class SelectableFilesSection:
             self.see.clipboard_clear()
             for i in range(len(files)):
                 self.see.insert(0, (files[i]))
-            vel_var = VelocitiesList(self.master, files, filez, 10)  
-            vel_var.render_list()
-            self.list_of_velocities = vel_var.get_list()
+            self.vel_var = VelocitiesList(self.master, files, filez, 10)  
+            self.vel_var.render_list()
+            self.list_of_velocities = self.vel_var.get_list()
+
+    def clear_files(self):
+        self.see.delete(0, 'end')        
+        self.vel_var.delete_list()
+        
