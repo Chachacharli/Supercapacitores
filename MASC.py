@@ -21,20 +21,21 @@ from project.views.Navbar import Navbar
 #Controllers
 from project.controllers.ControllerModelo1 import ControllerModelo1
 
+
+
 class TabView:
     def __init__(self, root) -> None:
         self.root = root
         self.TabTree = customtkinter.CTkTabview(root, state=DISABLED, fg_color='#1D3F60')
         self.TabTree.grid( row=2, column=3, rowspan=8, columnspan=7, sticky= 'nswe')
-        self.TabTree.add('Interpolation')  ## EJES I/cm-2 or I/g^-1
+        self.TabTree.add('Interpolation')  ## EJES J/cm-2 or J/g^-1 Normalizated vortagram
         self.TabTree.add('Obtaining of K')  ## Y m*V^1/2 miliamper mA*Vs-1/2 X   ##OBTENCION DE K
         self.TabTree.add('VOLTAMPEROGRAM')  ## VOLTAMPEROGRAMAS ESTIMADA VOLTAPEROGRAM
         self.TabTree.add('Total Q')  ##  TOTAL 
-        self.TabTree.add('Q%')  ## Q%
-        self.TabTree.add('MASOGRAMA')  ## MASOGRAMA 
+        self.TabTree.add('Q%')  ## Q%   
+        self.TabTree.add('MASOGRAMA')  ## MASOGRAM 
         self.TabTree.add('ACTIVE THICKNESS')  ## ACTIVE THICKNESS
-
-
+        
 
 class MainScreeen:
     def __init__(self) -> None:
@@ -79,14 +80,15 @@ class MainScreeen:
         self.btn_next = customtkinter.CTkButton(self.aside.aside ,text='Continue', 
                                             fg_color='#2ECC71',
                                             command=lambda: self.get_data_from_form())
-        self.btn_next.grid(row=10, column=0)        
+        self.btn_next.grid(row=5, column=0)        
 
 
        
         self.open_form = customtkinter.CTkButton(self.aside.aside ,text='Open form', 
                                             fg_color='#2ECC71',
                                             command=lambda: self.abrir_formulario())
-        self.open_form.grid(row=10, column=1)  
+        # self.open_form.configure(state='Disable')
+        self.open_form.grid(row=5, column=1)  
 
         self.root.mainloop()
 
@@ -148,7 +150,9 @@ class MainScreeen:
             controller = ControllerModelo1(response, self.tipo_de_modelo)
             interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs = controller.manage_data()
 
+        
         self.render_modelo1(interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs)
+
 
     def render_modelo1(self,interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs):
         
@@ -209,7 +213,7 @@ class MainScreeen:
             self.tabview.TabTree.configure(state='Activate')
     
     def inizialize_window(self) -> None:
-            self.root.title( 'SuperCapacitoresSoftware' )
+            self.root.title( 'MASC' )
             width= self.root.winfo_screenwidth()
             height= self.root.winfo_screenheight()    
             self.root.minsize( width= width, height= height)
