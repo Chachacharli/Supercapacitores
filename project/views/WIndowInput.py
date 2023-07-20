@@ -1,8 +1,7 @@
 import customtkinter
 import tkinter as tk
-from Aside import ModeloUnoFormulario 
+from project.views.Aside import ModeloUnoFormulario 
 import project.utils.contstans as CONST
-
 
 class WindowInput(tk.Toplevel):
     """
@@ -46,7 +45,8 @@ class WindowInput(tk.Toplevel):
         array = self.formulario_actual.return_data_inputs()
         if all(isinstance(valor, float) for valor in array):
             self.parent.data = array
-            print(self.parent.data)
+            self.destroy()
+
         else: 
             if self.message_frame.winfo_ismapped():
                 self.message_frame.grid_forget()
