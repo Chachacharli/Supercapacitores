@@ -69,3 +69,7 @@ class VelocitiesList:
             for i in range(len(self.bubble)):
                list_of_data.append(self.bubble[i].return_info())
             return(list_of_data)
+        
+        def delete_list(self):
+            self.frame.destroy()
+            self.bubble.clear() 
