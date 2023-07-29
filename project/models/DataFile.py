@@ -43,7 +43,7 @@ class CorrienteTotal:
         fig.suptitle(f'Velocidad C&D: {velocidad} mV/s')
         ax.plot( UExp, IExp, label='Experimental data')
         ax.plot(linspace_varr[0: len(linspace_varr)-1 ],Imodelpos, 'o b', label='ImodelPos' )   
-        ax.plot(linspace_varr[0: len(linspace_varr)-1 ], Imodelneg, 'o r', label='ImodelPos')        
+        ax.plot(linspace_varr[0: len(linspace_varr)-1 ], Imodelneg, 'o r', label='ImodelNeg')        
         ax.set_ylabel('I (A/g)')
         ax.set_xlabel('U (V)')  
         ax.legend()        

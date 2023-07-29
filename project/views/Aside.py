@@ -5,7 +5,7 @@ from project.views.SelectableFileSection import SelectableFilesSection
 from project.views.MainInput import MainInput
 from project.interfaces.IModelosInputs import IModelosInputs
 import project.utils.contstans as CONST
-from project.views.DownloadFiles import DownloadFiles
+from project.controllers.DownloadFiles import DownloadFiles
 
 class ModeloUnoFormulario(IModelosInputs):
     def __init__(self, master: tk.Frame, id: str, diccionario: dict):
@@ -87,13 +87,18 @@ class Aside:
         self.aside.grid_columnconfigure(0, weight=0)
         self.aside.grid_rowconfigure(0, weight=0)
         self.aside.grid( row=1, column=1, rowspan=10, sticky= 'nswe', padx=(0))
-    
+        self.download_files_path: str = ''
+        self.list_of_checks: list[bool] = list()
+        self.cosa = DownloadFiles(self.root)
+        self.cosa.withdraw()
+
         self.selectable_files = SelectableFilesSection(self.aside)
         self.navigation_frame = NavigationFrameModelo1(self.aside)
 
         self.btn_downloadfiles = customtkinter.CTkButton(self.aside, text='Download Files', fg_color='#2CC985', command=lambda: self.open_download_files())
         self.btn_downloadfiles.grid(row=2, column=0, sticky='nswe', padx=10, pady=10)
+    
     def open_download_files(self):
-        dwonload = DownloadFiles(self.root)
+        self.cosa.deiconify()
         
 

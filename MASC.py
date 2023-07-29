@@ -11,6 +11,9 @@ from tkinter.constants import *
 ## DATACLASSES
 from project.models.DataClasses import EntradaModelo1
 
+# MODELS
+from project.models.DataFile import SimpleCSV, SimpleCSV2
+
 ## VIEWS
 from project.views.VerticalScrolledFrame import VerticalScrolledFrame
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
@@ -20,11 +23,11 @@ from project.views.Navbar import Navbar
 
 #Controllers
 from project.controllers.ControllerModelo1 import ControllerModelo1
-
+from project.controllers.DownloadFiles import ControllerDownloads
 
 
 class TabView:
-    def __init__(self, root) -> None:
+    def __init__(self, root) -> None:   
         self.root = root
         self.TabTree = customtkinter.CTkTabview(root, state=DISABLED, fg_color='#1D3F60')
         self.TabTree.grid( row=2, column=3, rowspan=8, columnspan=7, sticky= 'nswe')
@@ -49,6 +52,9 @@ class MainScreeen:
         self.tipo_de_modelo = None
         self.fomrulario: WindowInput = None
         self.data: list = list()
+        self.output_indexs: list[int] = list()
+        self.output_data: list[SimpleCSV or SimpleCSV2] = list()
+        self.list_of_checks: list[bool] = list()
 
     #TREE PARA CAMBIAR DE PESTANA
 
@@ -122,7 +128,7 @@ class MainScreeen:
 
         response = EntradaModelo1(inputdict, values, paths)
         
-        self.call_controller(response, id)
+        self.call_controller(response)
 
 
     def get_velocities_info(self) -> tuple[list[str], list[int]]:
@@ -142,17 +148,26 @@ class MainScreeen:
 
         return paths, values
 
-    def call_controller(self, response: EntradaModelo1, id: int) -> None:
+    def call_controller(self, response: EntradaModelo1) -> None:
         """
         Llama al controlador para manejar todos los datos. Posteriormente renderiza las graficas.
         """
         if(self.tipo_de_modelo == 1 or 2):
             controller = ControllerModelo1(response, self.tipo_de_modelo)
-            interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs = controller.manage_data()
-
+            datos_limpios, interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs = controller.manage_data()
         
-        self.render_modelo1(interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs)
+        self.data_output = datos_limpios
 
+        self.render_modelo1(interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs)
+        self.download_data()
+
+    def download_data(self) -> None:
+        """
+        Descarga los datos en un archivo .csv en la carpeta seleccionada.
+        """
+        controller_downloads = ControllerDownloads(self.data_output, self.aside.cosa.path, self.aside.cosa.list_of_checks)
+        controller_downloads.download()
+        
 
     def render_modelo1(self,interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs):
         

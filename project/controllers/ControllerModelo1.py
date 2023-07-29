@@ -132,4 +132,4 @@ class ControllerModelo1:
         Oxidacion = GOxidacion(list_Ukpos, list_Oxi_Redu).get_canvas()
         graph_bars = GraphBars(list_porcentaje, list_velocidades).get_canvas()
 
-        return list_of_plots, Oxidacion, list_of_corriente_total, graph_bars, list_of_porcentaje, list_masograma, list_insertograma,list_output_data
+        return self.data, list_of_plots, Oxidacion, list_of_corriente_total, graph_bars, list_of_porcentaje, list_masograma, list_insertograma,list_output_data
