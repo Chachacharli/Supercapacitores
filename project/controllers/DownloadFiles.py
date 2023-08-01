@@ -52,8 +52,10 @@ class ControllerDownloads:
         """
         Convertir la informacion de entrada en tablas para su posterior descarga.
         """
-        print('FROM CONTROLLER DOWNLOADS ')
-        print(self.list_of_checks)
+        # Si la lista de list_of_checks esta vacia, no se haga break
+        if len(self.list_of_checks) == 0:
+            return
+        
         # Aqui es un bucle for para cada archivo
         for i in range(len(self.info)):
             x = 0

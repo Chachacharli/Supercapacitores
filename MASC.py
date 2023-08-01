@@ -38,6 +38,7 @@ class TabView:
         self.TabTree.add('Q%')  ## Q%   
         self.TabTree.add('MASOGRAMA')  ## MASOGRAM 
         self.TabTree.add('ACTIVE THICKNESS')  ## ACTIVE THICKNESS
+        self.TabTree.add('Barras 2')  ## ACTIVE THICKNESS
         
 
 class MainScreeen:
@@ -82,6 +83,9 @@ class MainScreeen:
 
         self.content7 = VerticalScrolledFrame( self.tabview.TabTree.tab('ACTIVE THICKNESS'))
         self.content7.pack(fill=BOTH, expand=True)       
+
+        self.content8 = VerticalScrolledFrame( self.tabview.TabTree.tab('Barras 2'))
+        self.content8.pack(fill=BOTH, expand=True)               
         
         self.btn_next = customtkinter.CTkButton(self.aside.aside ,text='Continue', 
                                             fg_color='#2ECC71',
@@ -154,11 +158,11 @@ class MainScreeen:
         """
         if(self.tipo_de_modelo == 1 or 2):
             controller = ControllerModelo1(response, self.tipo_de_modelo)
-            datos_limpios, interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs = controller.manage_data()
+            datos_limpios, interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs, steps_bar = controller.manage_data()
         
         self.data_output = datos_limpios
 
-        self.render_modelo1(interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs)
+        self.render_modelo1(interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, steps_bar)
         self.download_data()
 
     def download_data(self) -> None:
@@ -169,7 +173,7 @@ class MainScreeen:
         controller_downloads.download()
         
 
-    def render_modelo1(self,interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, outputs):
+    def render_modelo1(self,interpolacion, oxidacion, corriente_total, bars, porcentaje, masograma, insertograma, steps_bar):
         
         #Renderizar grafica de oxidacion
         canvasOxidacion = FigureCanvasTkAgg(oxidacion, self.conntent2.interior)
@@ -224,6 +228,13 @@ class MainScreeen:
             insertograma_canvas = NavigationToolbar2Tk(insertograma_canvas, self.content7.interior, pack_toolbar=False)
             insertograma_canvas.update()
             insertograma_canvas.pack(fill='both' )
+
+            steps_bar_canvas = FigureCanvasTkAgg(steps_bar[i], self.content8.interior)
+            steps_bar_canvas.draw()
+            steps_bar_canvas.get_tk_widget().pack(fill='both', pady=20, padx=20)
+            steps_bar_canvas = NavigationToolbar2Tk(steps_bar_canvas, self.content8.interior, pack_toolbar=False)
+            steps_bar_canvas.update()
+            steps_bar_canvas.pack(fill='both' )            
 
             self.tabview.TabTree.configure(state='Activate')
     

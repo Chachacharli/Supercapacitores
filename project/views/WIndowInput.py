@@ -43,17 +43,24 @@ class WindowInput(tk.Toplevel):
         Es el manejo de los datos, pasa los valores del formulario mediante un array a la instancia data de el padre. 
         """
         array = self.formulario_actual.return_data_inputs()
-        if all(isinstance(valor, float) for valor in array):
+        # Que todos los valores de la lista sean float excepto el ultimo, que sea un string
+    
+        if all(isinstance(valor, float) for valor in array[:-1]) and isinstance(array[-1], str):
             self.parent.data = array
             self.destroy()
+
+        # if all(isinstance(valor, float) for valor in array):
+        #     self.parent.data = array
+        #     self.destroy()
 
         else: 
             if self.message_frame.winfo_ismapped():
                 self.message_frame.grid_forget()
                 self.label.grid_forget()
-                
+                print(array)
             else:    
                 self.message_frame.grid( sticky= 'nswe' )
                 self.label = customtkinter.CTkLabel(self.message_frame, text='Introduce correctamente los datos: Algun dato no es numerico', text_color='#B71C1C')
                 self.label.grid()
+                print(array)
      

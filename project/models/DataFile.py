@@ -6,6 +6,7 @@ from project.interfaces._ISetStatus import _ISetState
 from scipy.interpolate import interp1d 
 import pandas as pd
 from dataclasses import dataclass
+from project.utils.contstans import FONT_SIZES_PLOTS as FONT
 
 import warnings
 warnings.simplefilter('ignore', np.RankWarning)
@@ -27,14 +28,17 @@ class OutputData:
 
 
 class Muestra1:
-    def __init__(self, UExp , IExp, UExppos, IExppos, velocidad) -> None:
+    def __init__(self, UExp , IExp, UExppos, IExppos, velocidad, reference) -> None:
         fig, ax = plt.subplots(1,1, dpi = 80, figsize= (10,10))
         fig.suptitle(f'velocidad: {velocidad}') 
         ax.plot( UExp,IExp , label='Experimental data')
         ax.scatter(UExppos, IExppos, c='red', label='Interpolate data')
-        ax.set_ylabel('I/cm-2')
-        ax.set_xlabel('U')  
         ax.legend()        
+        # SET FOTN LABELS AND TICKS
+        ax.set_ylabel('I/cm-2', fontsize=FONT['title'])
+        ax.set_xlabel(f'E(V vs {reference})', fontsize=FONT['title'])  
+        # ax.tick_params(axis='x', labelsize=FONT['ticks'] )
+        # ax.tick_params(axis='y', labelsize=FONT['ticks'] )
         self.canvas = fig
     
 class CorrienteTotal:
@@ -44,9 +48,12 @@ class CorrienteTotal:
         ax.plot( UExp, IExp, label='Experimental data')
         ax.plot(linspace_varr[0: len(linspace_varr)-1 ],Imodelpos, 'o b', label='ImodelPos' )   
         ax.plot(linspace_varr[0: len(linspace_varr)-1 ], Imodelneg, 'o r', label='ImodelNeg')        
-        ax.set_ylabel('I (A/g)')
-        ax.set_xlabel('U (V)')  
-        ax.legend()        
+        # ax.set_ylabel('I (A/g)', labelsize=FONT['ticks'])
+        # ax.set_xlabel('U (V)',   labelsize=FONT['ticks'])
+        # ax.tick_params(axis='x', labelsize=FONT['ticks'] )
+        # ax.tick_params(axis='y', labelsize=FONT['ticks'] )        
+        ax.legend()
+        
         self.canvas = fig
 
 
@@ -92,11 +99,24 @@ class IDataFile(ABC):
         self.path = path
         self.state = True 
 
-
+class StepBars:
+    def __init__(self, barras) -> plt.figure:
+        
+        self.barrasdf = pd.DataFrame(barras, columns=['Capacitiva', 'Difusiva', 'DLC'])
+        fig, axs = plt.subplots(3,1, sharex=True, sharey=True)
+        axs[0].bar(range(len(barras)),self.barrasdf['Capacitiva'], color='red')
+        axs[0].set_title('Capacitiva')
+        axs[1].bar(range(len(barras)),self.barrasdf['Difusiva'], color='blue')
+        axs[1].set_title('Difusiva')
+        axs[2].bar(range(len(barras)),self.barrasdf['DLC'], color='orange')
+        axs[2].set_title('Doble layer')
+        self.canvas = fig
+        return self.canvas
 
 class SimpleCSV(IDataFile):
     """
-    Modelo 1 
+    Modelo 1 AREA ACTIVA
+    AT = QD/cm2 * MM/Fq
     """
     def __init__(self, path: str, data: dict, velocidad: float) -> None:
         super().__init__(path)
@@ -105,9 +125,8 @@ class SimpleCSV(IDataFile):
         self.data = data
         self.csv = np.loadtxt( self.path )
         self.DivWin = int(data['ventana'])
-        
+        self.electron_refernce = data['referencia']
         self.areasup = int(data['areasup']) 
-    
         self.velocidad = velocidad
         self.velocidadE = velocidad/10000
         self.UKpos = self.velocidadE **0.5 
@@ -116,7 +135,7 @@ class SimpleCSV(IDataFile):
         self.cteact = (data['pesomol']/(data['electrones']*96500*data['densidad']))
         #StepOne data
         self.UExp = self.csv[:,0]
-        self.IExp = self.csv[:,1]
+        self.IExp = self.csv[:,1] * self.data['areasup']
         self.win = max(self.UExp) - min(self.UExp)
         self.linspace_varr = ( (np.linspace(min(self.UExp), max(self.UExp), self.DivWin)), self.win )
         self.UExppos: list[float] = []
@@ -190,7 +209,7 @@ class SimpleCSV(IDataFile):
         for idx, d in enumerate(Diff):
             if(d>0):
                 self.UExppos.append(self.UExp[idx])
-                self.IExppos.append(self.IExp[idx])  
+                self.IExppos.append(self.IExp[idx])
         #Corrientes anodicas
         for idx, d in enumerate(Diff):
             if(d<0):
@@ -348,7 +367,7 @@ class SimpleCSV(IDataFile):
         """
         Genera los plots para devolver todos los canvas de la interpolacion 
         """
-        v = Muestra1(self.UExp, self.IExp, self.UExppos, self.IExppos, self.velocidad)
+        v = Muestra1(self.UExp, self.IExp, self.UExppos, self.IExppos, self.velocidad, self.electron_refernce)
         return v.canvas
     
     def generate_corriente_total(self) -> CorrienteTotal:
@@ -357,6 +376,14 @@ class SimpleCSV(IDataFile):
         """        
         c = CorrienteTotal(self.linspace_varr[0], self.UExp, self.IExp, self.Imodelpos, self.Imodelneg, self.velocidad)
         return c.canvas
+
+    def generate_StepBars(self) -> StepBars:
+        """
+        Genera los plots para devolver todos los canvas de corrientes totales en steps
+        """        
+        c = StepBars(self.barras)
+        return c.canvas
+
 
     def list_data(self) -> OutputData:
         """
@@ -373,7 +400,7 @@ class SimpleCSV(IDataFile):
 
 class SimpleCSV2(IDataFile):
     """
-    Modelo 1 
+    Modelo 1 MASA ACTIVA 
     """
     def __init__(self, path: str, data: dict, velocidad: float) -> None:
         super().__init__(path)
@@ -384,7 +411,9 @@ class SimpleCSV2(IDataFile):
         self.DivWin = int(data['ventana'])
 
         self.masalec = float(data['masalec']) * 0.7
-   
+        print(data)
+        self.electron_refernce = data['referencia']
+        print(f'ELECTRON DE REFERNCIA MODELO 2: {self.electron_refernce}')
         self.velocidad = velocidad
         self.velocidadE = velocidad/10000
         self.UKpos = self.velocidadE **0.5 
@@ -634,7 +663,7 @@ class SimpleCSV2(IDataFile):
         """
         Genera los plots para devolver todos los canvas de la interpolacion 
         """
-        v = Muestra1(self.UExp, self.IExp, self.UExppos, self.IExppos, self.velocidad)
+        v = Muestra1(self.UExp, self.IExp, self.UExppos, self.IExppos, self.velocidad, self.electron_refernce)
         return v.canvas
     
     def generate_corriente_total(self) -> CorrienteTotal:
@@ -642,6 +671,13 @@ class SimpleCSV2(IDataFile):
         Genera los plots para devolver todos los canvas de corrientes totales
         """        
         c = CorrienteTotal(self.linspace_varr[0], self.UExp, self.IExp, self.Imodelpos, self.Imodelneg, self.velocidad)
+        return c.canvas
+    
+    def generate_StepBars(self) -> StepBars:
+        """
+        Genera los plots para devolver todos los canvas de corrientes totales en steps
+        """        
+        c = StepBars(self.barras)
         return c.canvas
 
     def list_data(self) -> OutputData:
@@ -652,3 +688,4 @@ class SimpleCSV2(IDataFile):
             self.UExppos,
             self.IExppos
         )
+    

@@ -102,6 +102,7 @@ class ControllerModelo1:
         list_output_data: list[dict] = []
         list_porcentaje: list = []
         list_velocidades: list = []
+        list_of_step_bar: list = []
 
         for i in range(len(self.data)):
             self.data[i].separate_currents()
@@ -128,8 +129,9 @@ class ControllerModelo1:
             list_masograma.append(self.data[i].masograma())
             list_insertograma.append(self.data[i].insertograma())
             list_output_data.append(self.data[i].list_data())
+            list_of_step_bar.append(self.data[i].generate_StepBars())
 
         Oxidacion = GOxidacion(list_Ukpos, list_Oxi_Redu).get_canvas()
         graph_bars = GraphBars(list_porcentaje, list_velocidades).get_canvas()
 
-        return self.data, list_of_plots, Oxidacion, list_of_corriente_total, graph_bars, list_of_porcentaje, list_masograma, list_insertograma,list_output_data
+        return self.data, list_of_plots, Oxidacion, list_of_corriente_total, graph_bars, list_of_porcentaje, list_masograma, list_insertograma,list_output_data, list_of_step_bar

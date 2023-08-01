@@ -11,13 +11,11 @@ class MainInput:
                                             textvariable=unit_variables_asig,
                                             border_color='#2CC985'
                                             )
-        self.entrie_din.configure(validate="key",validatecommand=(self.entrie_din.register(self.valid_command),"%P",),)        
+        self.entrie_din.configure(validate="key")        
         self.entrie_din.grid(row=row+2, column=0, sticky="ew",padx=10, pady=15, columnspan=3)
 
         self.label_din = customtkinter.CTkLabel(master, text=header)
         self.label_din.grid(row=row+2,column = 3, sticky="ew",padx=15, pady=15)
 
-    def valid_command(self, P):
-        
-        return P 
+
     
