@@ -111,7 +111,6 @@ class StepBars:
         axs[2].bar(range(len(barras)),self.barrasdf['DLC'], color='orange')
         axs[2].set_title('Doble layer')
         self.canvas = fig
-        return self.canvas
 
 class SimpleCSV(IDataFile):
     """
@@ -133,9 +132,10 @@ class SimpleCSV(IDataFile):
         self.UKneg = self.velocidadE **0.5 
         self.DLC = data['DLC']
         self.cteact = (data['pesomol']/(data['electrones']*96500*data['densidad']))
+        print(f'Datos: {data}')        
         #StepOne data
         self.UExp = self.csv[:,0]
-        self.IExp = self.csv[:,1] * self.data['areasup']
+        self.IExp = self.csv[:,1] * 2
         self.win = max(self.UExp) - min(self.UExp)
         self.linspace_varr = ( (np.linspace(min(self.UExp), max(self.UExp), self.DivWin)), self.win )
         self.UExppos: list[float] = []
@@ -303,16 +303,29 @@ class SimpleCSV(IDataFile):
         self.Qdpos = 0
         self.Qdneg = 0
 
+        """
+        ESPESOR ACTIVO EN CM
+        
+        AT = QD/cm^2 * MM/Fq
+        donde 
+        AT: Active thickness
+        QD: Diffusion charge
+        MM: Molecular mass
+        Fq: Faraday 
+        """
+        Fq = 96485.3329
+        
+        # for i in range(len(self.Imodelpos_1)):
+        #     self.insert.append( self.cteact * ((self.Qd[i]/self.areasup)/Fq))
+        #     self.inserneg.append( self.cteact * (self.Qdneg/self.areasup) )
 
         for i in range(len(self.Imodelpos_1)):
-            self.Qdpos = (self.Qdpos + ((self.Imodelpos_2[i]* self.difV)/self.velocidadE)) # A/g*s
-            self.Qdneg = (self.Qdneg + ((self.Imodelneg_2[i]* self.difV)/self.velocidadE))# A/g*s
+            self.Qdpos = (self.Qdpos + ((self.Imodelpos_2[i]* self.difV)/self.velocidadE))
+            self.Qdneg = (self.Qdneg + ((self.Imodelneg_2[i]* self.difV)/self.velocidadE))
             self.insert.append( self.cteact * ((self.Qd[i]/self.areasup)/10000) *1E+7 )
-            self.inserneg.append( self.cteact * (self.Qdneg/self.areasup) )
-
+            # self.inserneg.append( self.cteact * (self.Qdneg/self.areasup) )  <-- Este valor representa los valores negativos dle insertogrtama, omitelo
 
         fig, ax = plt.subplots(1,1)
-        ax.plot(self.linspace_varr[0][0:len(self.linspace_varr[0])-1], self.inserneg)
         ax.plot(self.linspace_varr[0][0:len(self.linspace_varr[0])-1], self.insert, 'b')
         return fig
 
@@ -323,7 +336,8 @@ class SimpleCSV(IDataFile):
         for i in range(len(self.Imodelneg)):
             self.barras.append( [ ((self.Qc[i])-(self.DLC/self.DivWin)), (self.Qd[i]), (self.DLC/self.DivWin) ] )
         self.pandasdt = pd.DataFrame(self.barras,  columns = [ 'Capacitiva','Difusiva','Doble layer' ])
-        
+        print('BARRAS')
+        print(self.pandasdt)
         b = Barras(pandasdt=self.pandasdt, barras = self.barras)
         return b.canvas
     
@@ -409,7 +423,7 @@ class SimpleCSV2(IDataFile):
         self.data = data
         self.csv = np.loadtxt( self.path )
         self.DivWin = int(data['ventana'])
-
+        
         self.masalec = float(data['masalec']) * 0.7
         print(data)
         self.electron_refernce = data['referencia']
@@ -420,6 +434,8 @@ class SimpleCSV2(IDataFile):
         self.UKneg = self.velocidadE **0.5 
         self.DLC = data['DLC']
         self.cteact = (data['pesomol']/(data['electrones']*96500*data['densidad']))
+        print(f'Datos: {data}')
+
         #StepOne data
         self.UExp = self.csv[:,0]
         self.IExp = self.csv[:,1]
@@ -594,10 +610,8 @@ class SimpleCSV2(IDataFile):
             self.Qdpos = (self.Qdpos + ((self.Imodelpos_2[i]* self.difV)/self.velocidadE)) # A/g*s
             self.Qdneg = (self.Qdneg + ((self.Imodelneg_2[i]* self.difV)/self.velocidadE))# A/g*s
             self.insert.append( self.cteact * ((self.Qd[i]/self.masalec)/10000) *1E+7 )
-            self.inserneg.append( self.cteact * (self.Qdneg/self.masalec) )
-
+            # self.inserneg.append( self.cteact * (self.Qdneg/self.masalec) )
         fig, ax = plt.subplots(1,1)
-        ax.plot(self.linspace_varr[0][0:len(self.linspace_varr[0])-1], self.inserneg)
         ax.plot(self.linspace_varr[0][0:len(self.linspace_varr[0])-1], self.insert, 'b')
         ax.set_xlabel('E(V vs Electrodo')
         ax.set_ylabel('Active Thickness nm')

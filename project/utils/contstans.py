@@ -4,6 +4,7 @@
 
 modelo1_masa_activa= {
     "Molecular Mass of active ion": "g/mol",
+    "Superface area of material": "cm^2",
     "Active material density": "g/m3",
     "Mass of Active Material": "m^2/g",
     "Potencial steps": "int",
@@ -14,6 +15,7 @@ modelo1_masa_activa= {
 
 modelo1_area_activa = {
     "Molecular Mass of active ion": "g/mol",
+    "Superface area of material": "cm^2",
     "Active material density": "g/m3",
     "Geometrical superficial area": "m^2/g",
     "Potencial steps": "int",
@@ -25,6 +27,7 @@ modelo1_area_activa = {
 
 modelo1_area_activa_respuestas = {
     "pesomol": "0",
+    "surperface": "0",
     "densidad": "0",
     "areasup": "0",
     "ventana": "0",
@@ -36,6 +39,7 @@ modelo1_area_activa_respuestas = {
 
 modelo1_masa_activa_respuestas= {
     "pesomol": "0",
+    "surperface": "0",
     "densidad": "0",
     "masalec": "0",
     "ventana": "0",
