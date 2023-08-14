@@ -110,6 +110,8 @@ class StepBars:
         axs[1].set_title('Difusiva')
         axs[2].bar(range(len(barras)),self.barrasdf['DLC'], color='orange')
         axs[2].set_title('Doble layer')
+        print('barras')
+        print(self.barrasdf)
         self.canvas = fig
 
 class SimpleCSV(IDataFile):
